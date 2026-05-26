@@ -1569,7 +1569,63 @@ function addRecipeRow(
   qty = ''
 ) {
 
-  return;
+  const wrap =
+    document.getElementById('recipeBuilder');
+
+  const row =
+    document.createElement('div');
+
+  row.className = 'recipe-row';
+
+  row.style.display = 'flex';
+  row.style.gap = '8px';
+  row.style.marginBottom = '8px';
+
+  row.innerHTML = `
+
+    <select
+      class="recipe-ingredient"
+      style="flex:1;padding:8px;">
+
+      <option value="">
+        Select Ingredient
+      </option>
+
+      ${db.ingredients.map(i => `
+
+        <option
+          value="${i.id}"
+          ${i.id === ingredientId ? 'selected' : ''}>
+
+          ${i.name}
+
+        </option>
+
+      `).join('')}
+
+    </select>
+
+    <input
+      type="number"
+      class="recipe-qty"
+      placeholder="Qty"
+      value="${qty}"
+      style="width:120px;padding:8px;"
+    />
+
+    <button
+      type="button"
+      class="btn btn-secondary remove-recipe-btn">
+
+      Remove
+
+    </button>
+  `;
+
+  wrap.appendChild(row);
+
+  row.querySelector('.remove-recipe-btn').onclick =
+    () => row.remove();
 
 }
 
