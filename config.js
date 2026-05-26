@@ -1,0 +1,23 @@
+window.APP_CONFIG = {
+
+  APP_NAME: 'CaflatPOS',
+
+  CURRENCY_SYMBOL: '₱',
+
+  TAX_RATE: 0,
+
+  LOW_STOCK_THRESHOLD: 10,
+
+  MAX_CART_ITEMS: 100,
+
+  ENABLE_RECEIPTS: true,
+
+  ENABLE_SOUND_EFFECTS: false,
+
+  ENABLE_DEBUG_LOGS: true,
+
+  DATE_LOCALE: 'en-PH',
+
+  DEFAULT_DECIMAL_PLACES: 2
+
+};
