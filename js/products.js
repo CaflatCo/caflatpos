@@ -84,21 +84,13 @@ function renderProductsTable() {
 
       <td>${product.category || '-'}</td>
 
-      <td>
-        ${formatCurrency(product.cost || 0)}
-      </td>
+      <td>${formatCurrency(product.cost || 0)}</td>
 
-      <td>
-        ${formatCurrency(product.price || 0)}
-      </td>
+      <td>${formatCurrency(product.price || 0)}</td>
 
-      <td>
-        ${margin}%
-      </td>
+      <td>${margin}%</td>
 
-      <td>
-        ${product.stock || 0}
-      </td>
+      <td>${product.stock || 0}</td>
 
       <td>
 
@@ -126,9 +118,7 @@ function renderProductsTable() {
 
     `;
 
-    tableBody.appendChild(
-      row
-    );
+    tableBody.appendChild(row);
 
   });
 
@@ -148,22 +138,6 @@ function renderPOSProducts() {
   const products =
     getProducts();
 
-  if (!products.length) {
-
-    grid.innerHTML = `
-
-      <div class="empty-state">
-
-        No products available
-
-      </div>
-
-    `;
-
-    return;
-
-  }
-
   products.forEach(product => {
 
     const card =
@@ -174,37 +148,20 @@ function renderPOSProducts() {
     card.className =
       'pos-product-card';
 
-    if (
-      Number(product.stock || 0)
-      <= 0
-    ) {
-
-      card.classList.add(
-        'out-of-stock'
-      );
-
-    }
-
-    if (
-      Number(product.stock || 0)
-      <=
-      Number(
-        product.reorderLevel || 5
-      )
-    ) {
-
-      card.classList.add(
-        'low-stock'
-      );
-
-    }
-
     card.onclick = () => {
 
       if (
-        Number(product.stock || 0)
-        <= 0
-      ) return;
+        product.variants &&
+        product.variants.length
+      ) {
+
+        openVariantSelector(
+          product
+        );
+
+        return;
+
+      }
 
       addToCart(
         product.id
@@ -221,6 +178,22 @@ function renderPOSProducts() {
           ${product.category || 'General'}
 
         </div>
+
+        ${
+          Number(product.stock || 0)
+          <=
+          Number(product.reorderLevel || 5)
+
+            ? `
+              <div class="pos-low-stock-pill">
+
+                LOW
+
+              </div>
+            `
+
+            : ''
+        }
 
       </div>
 
@@ -267,6 +240,42 @@ function saveProduct() {
     document.getElementById(
       'productId'
     )?.value;
+
+  const variants = [];
+
+  document
+    .querySelectorAll(
+      '.variant-card'
+    )
+    .forEach(card => {
+
+      const name =
+        card.querySelector(
+          '.variant-name'
+        )?.value;
+
+      const price =
+        Number(
+          card.querySelector(
+            '.variant-price'
+          )?.value || 0
+        );
+
+      if (name) {
+
+        variants.push({
+
+          id:
+            generateId(),
+
+          name,
+          price
+
+        });
+
+      }
+
+    });
 
   const product = {
 
@@ -320,7 +329,9 @@ function saveProduct() {
     description:
       document.getElementById(
         'productDescription'
-      )?.value || ''
+      )?.value || '',
+
+    variants
 
   };
 
@@ -343,9 +354,7 @@ function saveProduct() {
 
   else {
 
-    products.push(
-      product
-    );
+    products.push(product);
 
   }
 
@@ -358,6 +367,18 @@ function saveProduct() {
   showNotification(
     'Product saved',
     'success'
+  );
+
+}
+
+function openVariantSelector(product) {
+
+  const variant =
+    product.variants[0];
+
+  addToCart(
+    product.id,
+    variant
   );
 
 }
