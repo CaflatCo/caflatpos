@@ -233,16 +233,23 @@
         <button class="btn" onclick="openIngredientModal()">+ Add Ingredient</button>
       </div>
       <div class="section-title">Raw Ingredients</div>
-      <div class="table-wrapper"><table id="ingredientsTable">
-        <thead>
-          <tr>
-            <th>Name</th><th>Base Unit</th><th>Package Cost</th>
-            <th>Stock</th><th>Reorder Level</th><th>Actions</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
+      <div class="table-wrapper">
+        <table id="ingredientsTable">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Base Unit</th>
+              <th>Package Qty</th>
+              <th>Package Cost</th>
+              <th>Cost / Unit</th>
+              <th>Stock</th>
+              <th>Reorder Level</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
   </section>
 
   <!-- SALES -->
@@ -743,6 +750,18 @@
   style="display:none;"
 />
 
+
+
+<!-- VARIANT MODAL -->
+<div class="modal-overlay" id="variantModal">
+  <div class="modal">
+    <h3>Select Variant</h3>
+    <div id="variantOptions" class="variant-options"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('variantModal')">Cancel</button>
+    </div>
+  </div>
+</div>
 
 <!-- CORE -->
 <script src="./js/runtimeGuard.js"></script>
