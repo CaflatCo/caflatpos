@@ -23,7 +23,57 @@ class Ingredient {
     this.reorderLevel =
       Number(data.reorderLevel || 0);
 
+    this.costPerUnit =
+      this.calculateCostPerUnit();
+
+    this.lowStock =
+      this.stock <=
+      this.reorderLevel;
+
+    this.createdAt =
+      data.createdAt ||
+
+      new Date().toISOString();
+
+    this.updatedAt =
+      data.updatedAt ||
+
+      new Date().toISOString();
+
   }
+
+  calculateCostPerUnit() {
+
+    if (
+      this.packageQty <= 0
+    ) {
+
+      return 0;
+
+    }
+
+    return Number(
+
+      (
+        this.packageCost /
+        this.packageQty
+      ).toFixed(4)
+
+    );
+
+  }
+
+}
+
+window.Ingredient =
+  Ingredient;
+
+window.editingIngredientId =
+  null;
+
+function normalizeIngredient(data = {}) {
+
+  return new Ingredient(data);
 
 }
 
@@ -42,6 +92,51 @@ function setIngredients(ingredients) {
 
 }
 
+function getIngredientById(id) {
+
+  return getIngredients().find(
+    ingredient =>
+
+      String(ingredient.id) ===
+      String(id)
+  );
+
+}
+
+function calculateIngredientUsage(
+  ingredientId
+) {
+
+  let usage = 0;
+
+  getProducts().forEach(product => {
+
+    product.recipe.forEach(item => {
+
+      if (
+
+        String(
+          item.ingredientId
+        ) ===
+
+        String(ingredientId)
+
+      ) {
+
+        usage += Number(
+          item.quantity || 0
+        );
+
+      }
+
+    });
+
+  });
+
+  return usage;
+
+}
+
 function renderIngredientsTable() {
 
   const tableBody =
@@ -51,83 +146,128 @@ function renderIngredientsTable() {
 
   if (!tableBody) return;
 
+  tableBody.innerHTML = '';
+
   const ingredients =
     getIngredients();
-
-  tableBody.innerHTML = '';
 
   if (!ingredients.length) {
 
     tableBody.innerHTML = `
+
       <tr>
-        <td colspan="6">
+
+        <td colspan="8">
+
           No ingredients found
+
         </td>
+
       </tr>
+
     `;
 
     return;
 
   }
 
-  ingredients.forEach(
-    ingredient => {
+  ingredients.forEach(ingredient => {
 
-      const row =
-        document.createElement(
-          'tr'
-        );
-
-      row.innerHTML = `
-
-        <td>
-          ${ingredient.name}
-        </td>
-
-        <td>
-          ${ingredient.unit}
-        </td>
-
-        <td>
-          ${ingredient.packageCost}
-        </td>
-
-        <td>
-          ${ingredient.stock}
-        </td>
-
-        <td>
-          ${ingredient.reorderLevel}
-        </td>
-
-        <td>
-
-          <button
-            class="btn btn-sm"
-            onclick="editIngredient('${ingredient.id}')">
-
-            Edit
-
-          </button>
-
-          <button
-            class="btn btn-sm"
-            onclick="deleteIngredient('${ingredient.id}')">
-
-            Delete
-
-          </button>
-
-        </td>
-
-      `;
-
-      tableBody.appendChild(
-        row
+    const row =
+      document.createElement(
+        'tr'
       );
 
-    }
-  );
+    const lowStockClass =
+
+      ingredient.lowStock
+
+        ? 'low-stock-row'
+
+        : '';
+
+    row.className =
+      lowStockClass;
+
+    row.innerHTML = `
+
+      <td>
+        ${ingredient.name}
+      </td>
+
+      <td>
+        ${ingredient.unit}
+      </td>
+
+      <td>
+        ${ingredient.stock}
+      </td>
+
+      <td>
+        ${ingredient.packageQty}
+      </td>
+
+      <td>
+        ${formatCurrency(
+          ingredient.packageCost
+        )}
+      </td>
+
+      <td>
+        ${formatCurrency(
+          ingredient.costPerUnit
+        )}
+      </td>
+
+      <td>
+        ${ingredient.reorderLevel}
+      </td>
+
+      <td>
+
+        ${
+          ingredient.lowStock
+
+            ? `
+              <span class="badge-low-stock">
+                LOW STOCK
+              </span>
+            `
+
+            : `
+              <span class="badge-ok">
+                OK
+              </span>
+            `
+        }
+
+      </td>
+
+      <td>
+
+        <button
+          class="btn btn-sm"
+          onclick="editIngredient('${ingredient.id}')">
+
+          Edit
+
+        </button>
+
+        <button
+          class="btn btn-sm"
+          onclick="deleteIngredient('${ingredient.id}')">
+
+          Delete
+
+        </button>
+
+      </td>
+
+    `;
+
+    tableBody.appendChild(row);
+
+  });
 
 }
 
@@ -135,7 +275,12 @@ function saveIngredient() {
 
   const ingredient =
 
-    new Ingredient({
+    normalizeIngredient({
+
+      id:
+        editingIngredientId ||
+
+        generateId(),
 
       name:
         safeGetById(
@@ -146,6 +291,13 @@ function saveIngredient() {
         safeGetById(
           'ingredientPurchaseUnit'
         )?.value,
+
+      stock:
+        Number(
+          safeGetById(
+            'ingredientStock'
+          )?.value || 0
+        ),
 
       packageQty:
         Number(
@@ -161,38 +313,61 @@ function saveIngredient() {
           )?.value || 0
         ),
 
-      stock:
-        Number(
-          safeGetById(
-            'ingredientStock'
-          )?.value || 0
-        ),
-
       reorderLevel:
         Number(
           safeGetById(
             'ingredientReorder'
           )?.value || 0
-        )
+        ),
+
+      updatedAt:
+        new Date().toISOString()
 
     });
 
-  const ingredients =
+  let ingredients =
     getIngredients();
 
-  ingredients.push(
-    ingredient
-  );
+  if (editingIngredientId) {
+
+    ingredients =
+      ingredients.map(item =>
+
+        String(item.id) ===
+        String(editingIngredientId)
+
+          ? ingredient
+
+          : item
+
+      );
+
+  }
+
+  else {
+
+    ingredients.push(
+      ingredient
+    );
+
+  }
 
   setIngredients(
     ingredients
   );
 
+  editingIngredientId =
+    null;
+
   renderIngredientsTable();
+
+  renderIngredientDropdowns();
 
   closeModal(
     'ingredientModal'
   );
+
+  resetIngredientForm();
 
   showNotification(
     'Ingredient saved',
@@ -204,17 +379,16 @@ function saveIngredient() {
 function editIngredient(id) {
 
   const ingredient =
-    getIngredients().find(
-      item =>
-        String(item.id) ===
-        String(id)
-    );
+    getIngredientById(id);
 
   if (!ingredient) {
 
     return;
 
   }
+
+  editingIngredientId =
+    ingredient.id;
 
   safeGetById(
     'ingredientName'
@@ -227,6 +401,11 @@ function editIngredient(id) {
     ingredient.unit;
 
   safeGetById(
+    'ingredientStock'
+  ).value =
+    ingredient.stock;
+
+  safeGetById(
     'ingredientPackageQty'
   ).value =
     ingredient.packageQty;
@@ -237,16 +416,9 @@ function editIngredient(id) {
     ingredient.packageCost;
 
   safeGetById(
-    'ingredientStock'
-  ).value =
-    ingredient.stock;
-
-  safeGetById(
     'ingredientReorder'
   ).value =
     ingredient.reorderLevel;
-
-  deleteIngredient(id);
 
   openModal(
     'ingredientModal'
@@ -256,7 +428,7 @@ function editIngredient(id) {
 
 function deleteIngredient(id) {
 
-  const ingredients =
+  const updated =
 
     getIngredients().filter(
       ingredient =>
@@ -269,10 +441,73 @@ function deleteIngredient(id) {
     );
 
   setIngredients(
-    ingredients
+    updated
   );
 
   renderIngredientsTable();
+
+  renderIngredientDropdowns();
+
+  showNotification(
+    'Ingredient deleted',
+    'success'
+  );
+
+}
+
+function renderIngredientDropdowns() {
+
+  const dropdowns =
+    document.querySelectorAll(
+      '.recipe-ingredient'
+    );
+
+  const ingredients =
+    getIngredients();
+
+  dropdowns.forEach(dropdown => {
+
+    const currentValue =
+      dropdown.value;
+
+    dropdown.innerHTML = '';
+
+    ingredients.forEach(ingredient => {
+
+      const option =
+        document.createElement(
+          'option'
+        );
+
+      option.value =
+        ingredient.id;
+
+      option.textContent =
+
+        `${ingredient.name}
+         (${ingredient.unit})`;
+
+      dropdown.appendChild(
+        option
+      );
+
+    });
+
+    dropdown.value =
+      currentValue;
+
+  });
+
+}
+
+function checkLowStockIngredients() {
+
+  return getIngredients().filter(
+    ingredient =>
+
+      ingredient.stock <=
+      ingredient.reorderLevel
+  );
 
 }
 
@@ -280,6 +515,12 @@ document.addEventListener(
 
   'DOMContentLoaded',
 
-  renderIngredientsTable
+  () => {
+
+    renderIngredientsTable();
+
+    renderIngredientDropdowns();
+
+  }
 
 );
