@@ -4,410 +4,363 @@ function getSales() {
 
 }
 
-function getLowStockProducts() {
+function renderSalesTable() {
 
-  return getProducts().filter(
+  const tableBody =
+    document.querySelector(
+      '#salesTable tbody'
+    );
 
-    product =>
+  if (!tableBody) return;
 
-      Number(product.stock || 0)
-
-      <=
-
-      Number(
-        product.lowStockThreshold || 0
-      )
-
-  );
-
-}
-
-function getLowStockIngredients() {
-
-  return getIngredients().filter(
-
-    ingredient =>
-
-      Number(ingredient.stock || 0)
-
-      <=
-
-      Number(
-        ingredient.reorderLevel || 0
-      )
-
-  );
-
-}
-
-function calculateTotalRevenue() {
-
-  return getSales().reduce(
-
-    (total, sale) =>
-
-      total +
-
-      Number(sale.total || 0),
-
-    0
-
-  );
-
-}
-
-function calculateTotalOrders() {
-
-  return getSales().length;
-
-}
-
-function calculateAverageOrderValue() {
+  tableBody.innerHTML = '';
 
   const sales =
     getSales();
 
   if (!sales.length) {
 
-    return 0;
+    tableBody.innerHTML = `
+
+      <tr>
+
+        <td
+          colspan="6"
+          class="empty-state centered-empty-state">
+
+          No sales found
+
+        </td>
+
+      </tr>
+
+    `;
+
+    return;
 
   }
 
-  return (
+  sales
+    .slice()
+    .reverse()
+    .forEach(sale => {
 
-    calculateTotalRevenue() /
-
-    sales.length
-
-  );
-
-}
-
-function getTopProducts() {
-
-  const sales =
-    getSales();
-
-  const map = {};
-
-  sales.forEach(sale => {
-
-    sale.items.forEach(item => {
-
-      if (!map[item.name]) {
-
-        map[item.name] = {
-
-          quantity: 0,
-
-          revenue: 0
-
-        };
-
-      }
-
-      map[item.name].quantity +=
-
-        Number(
-          item.quantity || 0
+      const row =
+        document.createElement(
+          'tr'
         );
 
-      map[item.name].revenue +=
+      const itemCount =
+        Array.isArray(sale.items)
 
-        Number(item.price || 0) *
+          ? sale.items.reduce(
+              (sum, item) =>
 
-        Number(item.quantity || 0);
+                sum +
+                Number(
+                  item.quantity || 0
+                ),
+
+              0
+            )
+
+          : 0;
+
+      row.innerHTML = `
+
+        <td>
+
+          ${sale.receiptNumber || '-'}
+
+        </td>
+
+        <td>
+
+          ${new Date(
+            sale.createdAt
+          ).toLocaleString()}
+
+        </td>
+
+        <td>
+
+          ${itemCount}
+
+        </td>
+
+        <td>
+
+          ${formatCurrency(
+            Number(
+              sale.subtotal || 0
+            )
+          )}
+
+        </td>
+
+        <td>
+
+          ${formatCurrency(
+            Number(
+              sale.total || 0
+            )
+          )}
+
+        </td>
+
+        <td>
+
+          <button
+            class="btn btn-sm"
+            type="button"
+            onclick="viewSale('${sale.id}')">
+
+            View
+
+          </button>
+
+        </td>
+
+      `;
+
+      tableBody.appendChild(row);
 
     });
 
-  });
-
-  return Object.entries(map)
-
-    .map(([name, data]) => ({
-
-      name,
-
-      quantity:
-        data.quantity,
-
-      revenue:
-        data.revenue
-
-    }))
-
-    .sort(
-      (a, b) =>
-
-        b.quantity - a.quantity
-    )
-
-    .slice(0, 5);
-
 }
 
-function updateDashboardStats() {
+function viewSale(id) {
 
-  const statsGrid =
-    safeGetById(
-      'statsGrid'
+  const sale =
+    getSales().find(
+
+      item =>
+
+        String(item.id)
+        ===
+        String(id)
+
     );
 
-  if (!statsGrid) return;
+  if (!sale) return;
 
-  const revenue =
-    calculateTotalRevenue();
+  let itemsHtml = '';
 
-  const orders =
-    calculateTotalOrders();
+  if (
+    Array.isArray(sale.items)
+  ) {
 
-  const average =
-    calculateAverageOrderValue();
+    sale.items.forEach(item => {
 
-  const lowStockCount =
+      itemsHtml += `
 
-    getLowStockProducts().length +
+        <div class="receipt-line">
 
-    getLowStockIngredients().length;
+          <span>
 
-  statsGrid.innerHTML = `
+            ${item.name}
+            x${item.quantity}
 
-    <div class="stat-card">
-      <div class="stat-label">
-        Revenue
+          </span>
+
+          <span>
+
+            ${formatCurrency(
+
+              Number(item.price || 0)
+              *
+              Number(item.quantity || 0)
+
+            )}
+
+          </span>
+
+        </div>
+
+      `;
+
+    });
+
+  }
+
+  const modalBody =
+    document.getElementById(
+      'receiptBody'
+    );
+
+  if (!modalBody) return;
+
+  modalBody.innerHTML = `
+
+    <div class="receipt-header">
+
+      <div class="receipt-brand">
+
+        ${
+          APP_STATE.settings
+            ?.brandName ||
+
+          'Caflat.Co POS'
+        }
+
       </div>
-      <div class="stat-value">
-        ${formatCurrency(revenue)}
+
+      <div>
+
+        ${sale.receiptNumber}
+
       </div>
+
+      <div>
+
+        ${new Date(
+          sale.createdAt
+        ).toLocaleString()}
+
+      </div>
+
     </div>
 
-    <div class="stat-card">
-      <div class="stat-label">
-        Orders
-      </div>
-      <div class="stat-value">
-        ${orders}
-      </div>
+    <div class="receipt-divider"></div>
+
+    ${itemsHtml}
+
+    <div class="receipt-divider"></div>
+
+    <div class="receipt-line">
+
+      <span>
+        Subtotal
+      </span>
+
+      <span>
+
+        ${formatCurrency(
+          Number(
+            sale.subtotal || 0
+          )
+        )}
+
+      </span>
+
     </div>
 
-    <div class="stat-card">
-      <div class="stat-label">
-        Average Order
-      </div>
-      <div class="stat-value">
-        ${formatCurrency(average)}
-      </div>
-    </div>
+    <div class="receipt-line receipt-total">
 
-    <div class="stat-card">
-      <div class="stat-label">
-        Low Stock Alerts
-      </div>
-      <div class="stat-value">
-        ${lowStockCount}
-      </div>
+      <span>
+        Total
+      </span>
+
+      <span>
+
+        ${formatCurrency(
+          Number(
+            sale.total || 0
+          )
+        )}
+
+      </span>
+
     </div>
 
   `;
 
-  renderLowStockTable();
-
-  renderTopProducts();
-
-}
-
-function renderTopProducts() {
-
-  const table =
-    safeQuery(
-      '#topProductsTable tbody'
-    );
-
-  if (!table) return;
-
-  table.innerHTML = '';
-
-  const products =
-    getTopProducts();
-
-  if (!products.length) {
-
-    table.innerHTML = `
-
-      <tr>
-
-        <td colspan="4">
-
-          No sales yet
-
-        </td>
-
-      </tr>
-
-    `;
-
-    return;
-
-  }
-
-  products.forEach(product => {
-
-    const row =
-      document.createElement(
-        'tr'
-      );
-
-    row.innerHTML = `
-
-      <td>
-        ${product.name}
-      </td>
-
-      <td>
-        ${product.quantity}
-      </td>
-
-      <td>
-        ${formatCurrency(
-          product.revenue
-        )}
-      </td>
-
-      <td>
-        —
-      </td>
-
-    `;
-
-    table.appendChild(row);
-
-  });
-
-}
-
-function renderLowStockTable() {
-
-  const table =
-    safeQuery(
-      '#lowStockTable tbody'
-    );
-
-  if (!table) return;
-
-  table.innerHTML = '';
-
-  const productAlerts =
-    getLowStockProducts();
-
-  const ingredientAlerts =
-    getLowStockIngredients();
-
-  const alerts = [
-
-    ...productAlerts.map(item => ({
-
-      name: item.name,
-
-      stock: item.stock,
-
-      reorder:
-        item.lowStockThreshold,
-
-      type: 'Product'
-
-    })),
-
-    ...ingredientAlerts.map(item => ({
-
-      name: item.name,
-
-      stock: item.stock,
-
-      reorder:
-        item.reorderLevel,
-
-      type: 'Ingredient'
-
-    }))
-
-  ];
-
-  if (!alerts.length) {
-
-    table.innerHTML = `
-
-      <tr>
-
-        <td colspan="4">
-
-          No low stock alerts
-
-        </td>
-
-      </tr>
-
-    `;
-
-    return;
-
-  }
-
-  alerts.forEach(alert => {
-
-    const row =
-      document.createElement(
-        'tr'
-      );
-
-    row.innerHTML = `
-
-      <td>
-        ${alert.name}
-      </td>
-
-      <td>
-        ${alert.stock}
-      </td>
-
-      <td>
-        ${alert.reorder}
-      </td>
-
-      <td>
-
-        <span class="badge-low-stock">
-
-          LOW STOCK
-
-        </span>
-
-      </td>
-
-    `;
-
-    table.appendChild(row);
-
-  });
+  openModal(
+    'receiptModal'
+  );
 
 }
 
 function refreshDashboard() {
 
-  updateDashboardStats();
+  const sales =
+    getSales();
+
+  const totalSales =
+    sales.reduce(
+
+      (sum, sale) =>
+
+        sum +
+        Number(
+          sale.total || 0
+        ),
+
+      0
+
+    );
+
+  const totalOrders =
+    sales.length;
+
+  const totalProducts =
+    Array.isArray(
+      APP_STATE.products
+    )
+
+      ? APP_STATE.products.length
+
+      : 0;
+
+  const salesEl =
+    document.getElementById(
+      'dashboardSales'
+    );
+
+  const ordersEl =
+    document.getElementById(
+      'dashboardOrders'
+    );
+
+  const productsEl =
+    document.getElementById(
+      'dashboardProducts'
+    );
+
+  if (salesEl) {
+
+    salesEl.textContent =
+      formatCurrency(
+        totalSales
+      );
+
+  }
+
+  if (ordersEl) {
+
+    ordersEl.textContent =
+      totalOrders;
+
+  }
+
+  if (productsEl) {
+
+    productsEl.textContent =
+      totalProducts;
+
+  }
 
 }
 
 document.addEventListener(
-
   'DOMContentLoaded',
-
   () => {
+
+    renderSalesTable();
 
     refreshDashboard();
 
   }
-
 );
+
+window.getSales =
+  getSales;
+
+window.renderSalesTable =
+  renderSalesTable;
+
+window.viewSale =
+  viewSale;
 
 window.refreshDashboard =
   refreshDashboard;
