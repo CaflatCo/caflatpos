@@ -75,6 +75,7 @@ async function login() {
 
   const result =
     await executeCommand(
+
       'login',
 
       {
@@ -84,6 +85,7 @@ async function login() {
         password
 
       }
+
     );
 
   if (!result) {
@@ -120,6 +122,18 @@ function initializeAuth() {
       'loginBtn'
     );
 
+  const loginScreen =
+    safeGetById(
+      'loginScreen'
+    );
+
+  if (loginScreen) {
+
+    loginScreen.style.display =
+      'flex';
+
+  }
+
   if (loginBtn) {
 
     loginBtn.addEventListener(
@@ -129,47 +143,24 @@ function initializeAuth() {
 
   }
 
-  const session =
-    loadFromStorage(
-      'caflat_auth'
-    );
-
-  if (
-    session &&
-    session.role
-  ) {
-
-    updateState(
-      'currentUserRole',
-
-      () => session.role
-    );
-
-    applyAuth(
-      session.role
-    );
-
-    emitEvent(
-      'userSessionRestored',
-      session
-    );
-
-  }
-
 }
 
 document.addEventListener(
+
   'DOMContentLoaded',
 
   initializeAuth
+
 );
 
 registerCommand(
+
   'login',
 
   async payload => {
 
     return await runTransaction(
+
       'login',
 
       async () => {
@@ -188,11 +179,15 @@ registerCommand(
         ) {
 
           showNotification(
+
             'Invalid username or password',
+
             'error'
+
           );
 
           createAuditEntry(
+
             'login_failed',
 
             {
@@ -200,6 +195,7 @@ registerCommand(
               username
 
             }
+
           );
 
           return false;
@@ -207,6 +203,7 @@ registerCommand(
         }
 
         saveToStorage(
+
           'caflat_auth',
 
           {
@@ -217,15 +214,19 @@ registerCommand(
               user.role
 
           }
+
         );
 
         updateState(
+
           'currentUserRole',
 
           () => user.role
+
         );
 
         createAuditEntry(
+
           'login_success',
 
           {
@@ -236,6 +237,7 @@ registerCommand(
               user.role
 
           }
+
         );
 
         applyAuth(
@@ -243,6 +245,7 @@ registerCommand(
         );
 
         emitEvent(
+
           'userLoggedIn',
 
           {
@@ -253,27 +256,35 @@ registerCommand(
               user.role
 
           }
+
         );
 
         showNotification(
+
           'Login successful',
+
           'success'
+
         );
 
         return true;
 
       }
+
     );
 
   }
+
 );
 
 registerCommand(
+
   'logout',
 
   async () => {
 
     return await runTransaction(
+
       'logout',
 
       async () => {
@@ -291,8 +302,11 @@ registerCommand(
         );
 
         showNotification(
+
           'Logged out successfully',
+
           'info'
+
         );
 
         location.reload();
@@ -300,7 +314,9 @@ registerCommand(
         return true;
 
       }
+
     );
 
   }
+
 );
