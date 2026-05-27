@@ -62,7 +62,7 @@ function renderCategories() {
 
     list.innerHTML = `
 
-      <div class="empty-state">
+      <div class="empty-state centered-empty-state">
         No categories yet
       </div>
 
@@ -84,7 +84,9 @@ function renderCategories() {
 
     item.innerHTML = `
 
-      <span>${category}</span>
+      <span>
+        ${category}
+      </span>
 
       <button
         class="btn btn-sm"
@@ -359,6 +361,42 @@ function addRecipeRow(data = {}) {
 
 }
 
+function toggleRecipeMode() {
+
+  const recipeMode =
+    document.getElementById(
+      'recipeMode'
+    );
+
+  const batchYieldWrap =
+    document.getElementById(
+      'batchYieldWrap'
+    );
+
+  if (
+    !recipeMode ||
+    !batchYieldWrap
+  ) {
+    return;
+  }
+
+  if (
+    recipeMode.value ===
+    'batch'
+  ) {
+
+    batchYieldWrap.style.display =
+      'block';
+
+  } else {
+
+    batchYieldWrap.style.display =
+      'none';
+
+  }
+
+}
+
 document.addEventListener(
   'DOMContentLoaded',
   () => {
@@ -366,6 +404,22 @@ document.addEventListener(
     renderCategories();
 
     renderCategoryOptions();
+
+    toggleRecipeMode();
+
+    const recipeMode =
+      document.getElementById(
+        'recipeMode'
+      );
+
+    if (recipeMode) {
+
+      recipeMode.addEventListener(
+        'change',
+        toggleRecipeMode
+      );
+
+    }
 
   }
 );
@@ -384,3 +438,6 @@ window.deleteCategory =
 
 window.addRecipeRow =
   addRecipeRow;
+
+window.toggleRecipeMode =
+  toggleRecipeMode;
