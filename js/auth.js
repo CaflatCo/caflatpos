@@ -30,12 +30,45 @@ function applyAuth(role) {
       'roleBadge'
     );
 
+  const app =
+    safeGetById(
+      'app'
+    );
+
   if (loginScreen) {
 
     loginScreen.style.display =
       'none';
 
+    loginScreen.style.visibility =
+      'hidden';
+
+    loginScreen.style.opacity =
+      '0';
+
+    loginScreen.style.pointerEvents =
+      'none';
+
   }
+
+  if (app) {
+
+    app.style.display =
+      'block';
+
+    app.style.visibility =
+      'visible';
+
+    app.style.opacity =
+      '1';
+
+    app.style.pointerEvents =
+      'auto';
+
+  }
+
+  document.body.style.overflow =
+    'auto';
 
   if (roleBadge) {
 
@@ -127,10 +160,31 @@ function initializeAuth() {
       'loginScreen'
     );
 
+  const app =
+    safeGetById(
+      'app'
+    );
+
+  if (app) {
+
+    app.style.display =
+      'none';
+
+  }
+
   if (loginScreen) {
 
     loginScreen.style.display =
       'flex';
+
+    loginScreen.style.visibility =
+      'visible';
+
+    loginScreen.style.opacity =
+      '1';
+
+    loginScreen.style.pointerEvents =
+      'auto';
 
   }
 
