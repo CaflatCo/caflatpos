@@ -19,48 +19,95 @@ function setIngredients(
 
 function renderIngredientsTable() {
 
-  const tableBody =
-    safeGetById(
-      'ingredientsTableBody'
+  const table =
+    document.querySelector(
+      '#ingredientsTable tbody'
     );
 
-  if (!tableBody) return;
+  if (!table) return;
 
-  tableBody.innerHTML = '';
+  table.innerHTML = '';
 
   const ingredients =
     getIngredients();
 
+  if (!ingredients.length) {
+
+    table.innerHTML = `
+
+      <tr>
+
+        <td colspan="6">
+
+          No ingredients found
+
+        </td>
+
+      </tr>
+
+    `;
+
+    return;
+
+  }
+
   ingredients.forEach(
     ingredient => {
+
+      const isLowStock =
+
+        Number(
+          ingredient.stock || 0
+        )
+
+        <=
+
+        Number(
+          ingredient.reorderLevel || 0
+        );
 
       const row =
         document.createElement(
           'tr'
         );
 
+      row.className =
+        isLowStock
+          ? 'low-stock-row'
+          : '';
+
       row.innerHTML = `
 
         <td>
+
           ${ingredient.name}
+
         </td>
 
         <td>
+
           ${ingredient.unit}
+
         </td>
 
         <td>
+
           ${formatCurrency(
             ingredient.packageCost
           )}
+
         </td>
 
         <td>
+
           ${ingredient.stock}
+
         </td>
 
         <td>
+
           ${ingredient.reorderLevel}
+
         </td>
 
         <td>
@@ -89,7 +136,7 @@ function renderIngredientsTable() {
 
       `;
 
-      tableBody.appendChild(
+      table.appendChild(
         row
       );
 
@@ -98,40 +145,119 @@ function renderIngredientsTable() {
 
 }
 
-function saveIngredient(data) {
+function openIngredientModal() {
+
+  safeGetById(
+    'ingredientId'
+  ).value = '';
+
+  safeGetById(
+    'ingredientName'
+  ).value = '';
+
+  safeGetById(
+    'ingredientPurchaseUnit'
+  ).value = 'g';
+
+  safeGetById(
+    'ingredientPackageQty'
+  ).value = '';
+
+  safeGetById(
+    'ingredientPurchaseCost'
+  ).value = '';
+
+  safeGetById(
+    'ingredientStock'
+  ).value = '';
+
+  safeGetById(
+    'ingredientReorder'
+  ).value = '';
+
+  openModal(
+    'ingredientModal'
+  );
+
+}
+
+function saveIngredient() {
 
   const ingredients =
     getIngredients();
 
-  if (data.id) {
+  const ingredientId =
+    safeGetById(
+      'ingredientId'
+    )?.value;
 
-    const index =
-      ingredients.findIndex(
+  const ingredient = {
 
-        item =>
+    id:
+      ingredientId ||
+      generateId(),
 
-          String(item.id) ===
-          String(data.id)
-      );
+    name:
+      safeGetById(
+        'ingredientName'
+      )?.value || '',
 
-    if (index !== -1) {
+    unit:
+      safeGetById(
+        'ingredientPurchaseUnit'
+      )?.value || 'g',
 
-      ingredients[index] = data;
+    packageQty:
+      Number(
+        safeGetById(
+          'ingredientPackageQty'
+        )?.value || 0
+      ),
 
-    }
+    packageCost:
+      Number(
+        safeGetById(
+          'ingredientPurchaseCost'
+        )?.value || 0
+      ),
+
+    stock:
+      Number(
+        safeGetById(
+          'ingredientStock'
+        )?.value || 0
+      ),
+
+    reorderLevel:
+      Number(
+        safeGetById(
+          'ingredientReorder'
+        )?.value || 0
+      )
+
+  };
+
+  const existingIndex =
+    ingredients.findIndex(
+
+      item =>
+
+        String(item.id) ===
+        String(ingredient.id)
+    );
+
+  if (existingIndex !== -1) {
+
+    ingredients[existingIndex] =
+      ingredient;
 
   }
 
   else {
 
-    ingredients.push({
-
-      ...data,
-
-      id:
-        generateId()
-
-    });
+    ingredients.push(
+      ingredient
+    );
 
   }
 
@@ -142,6 +268,8 @@ function saveIngredient(data) {
   closeModal(
     'ingredientModal'
   );
+
+  renderIngredientsTable();
 
   showNotification(
     'Ingredient saved',
@@ -165,27 +293,36 @@ function editIngredient(id) {
 
   safeGetById(
     'ingredientId'
-  ).value = ingredient.id;
+  ).value =
+    ingredient.id;
 
   safeGetById(
     'ingredientName'
-  ).value = ingredient.name;
+  ).value =
+    ingredient.name;
 
   safeGetById(
-    'ingredientUnit'
-  ).value = ingredient.unit;
+    'ingredientPurchaseUnit'
+  ).value =
+    ingredient.unit;
 
   safeGetById(
-    'ingredientStock'
-  ).value = ingredient.stock;
+    'ingredientPackageQty'
+  ).value =
+    ingredient.packageQty;
 
   safeGetById(
-    'ingredientPackageCost'
+    'ingredientPurchaseCost'
   ).value =
     ingredient.packageCost;
 
   safeGetById(
-    'ingredientReorderLevel'
+    'ingredientStock'
+  ).value =
+    ingredient.stock;
+
+  safeGetById(
+    'ingredientReorder'
   ).value =
     ingredient.reorderLevel;
 
@@ -213,7 +350,9 @@ function deleteIngredient(id) {
         String(id)
     );
 
-  setIngredients(updated);
+  setIngredients(
+    updated
+  );
 
   showNotification(
     'Ingredient deleted',
