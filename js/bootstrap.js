@@ -4,35 +4,43 @@ function bootstrapApplication() {
     'Application bootstrap started'
   );
 
-  const authData =
+  const app =
+    safeGetById(
+      'app'
+    );
 
+  const loginScreen =
+    safeGetById(
+      'loginScreen'
+    );
+
+  const authData =
     loadFromStorage(
       'caflat_auth'
     );
 
-  const loginScreen =
-    document.getElementById(
-      'loginScreen'
-    );
-
-  const appContainer =
-    document.getElementById(
-      'app'
-    );
-
   if (!authData) {
+
+    if (app) {
+
+      app.style.display =
+        'none';
+
+    }
 
     if (loginScreen) {
 
       loginScreen.style.display =
         'flex';
 
-    }
+      loginScreen.style.visibility =
+        'visible';
 
-    if (appContainer) {
+      loginScreen.style.opacity =
+        '1';
 
-      appContainer.style.display =
-        'none';
+      loginScreen.style.pointerEvents =
+        'auto';
 
     }
 
@@ -49,12 +57,30 @@ function bootstrapApplication() {
     loginScreen.style.display =
       'none';
 
+    loginScreen.style.visibility =
+      'hidden';
+
+    loginScreen.style.opacity =
+      '0';
+
+    loginScreen.style.pointerEvents =
+      'none';
+
   }
 
-  if (appContainer) {
+  if (app) {
 
-    appContainer.style.display =
+    app.style.display =
       'block';
+
+    app.style.visibility =
+      'visible';
+
+    app.style.opacity =
+      '1';
+
+    app.style.pointerEvents =
+      'auto';
 
   }
 
