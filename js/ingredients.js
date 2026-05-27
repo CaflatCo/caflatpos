@@ -25,7 +25,19 @@ if (!window.UNITS) {
 ========================= */
 
 const UNIT_CONVERSIONS =
-  window.UNITS.CONVERSIONS;
+  (window.UNITS && window.UNITS.CONVERSIONS)
+
+    ? window.UNITS.CONVERSIONS
+
+    : {
+
+        g: 1,
+        kg: 1000,
+        ml: 1,
+        l: 1000,
+        pc: 1
+
+      };
 
 /* =========================
    SAFE NORMALIZER
