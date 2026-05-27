@@ -764,3 +764,98 @@ body.login-active{
 body.login-active{
   overflow:hidden;
 }
+
+/* ========================================
+   LOW STOCK VISUAL SYSTEM
+======================================== */
+
+.low-stock-row td{
+  background:#fff7f7 !important;
+}
+
+.low-stock-row td:first-child{
+  border-left:5px solid #dc2626;
+}
+
+.badge-low-stock{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:4px 10px;
+  border-radius:999px;
+  background:#fee2e2;
+  color:#b91c1c;
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  border:1px solid #fecaca;
+}
+
+.badge-low-stock::before{
+  content:'';
+  width:6px;
+  height:6px;
+  border-radius:999px;
+  background:#dc2626;
+}
+
+/* ========================================
+   POS PRODUCT ALERT STATES
+======================================== */
+
+.pos-product-card.low-stock{
+  border:1px solid #fca5a5 !important;
+  background:#fff7f7 !important;
+  position:relative;
+}
+
+.pos-product-card.low-stock::after{
+  content:'LOW';
+  position:absolute;
+  top:8px;
+  right:8px;
+  background:#dc2626;
+  color:#fff;
+  padding:2px 6px;
+  border-radius:999px;
+  font-size:9px;
+  font-weight:700;
+  letter-spacing:1px;
+}
+
+.pos-product-card.out-of-stock{
+  opacity:.45;
+  filter:grayscale(1);
+}
+
+/* ========================================
+   DASHBOARD ALERT CARDS
+======================================== */
+
+.dashboard-alert{
+  border-left:5px solid #dc2626;
+  background:#fff7f7;
+}
+
+.dashboard-alert .stat-value{
+  color:#b91c1c;
+}
+
+/* ========================================
+   INVENTORY WARNING STATES
+======================================== */
+
+.inventory-warning{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  color:#b91c1c;
+  font-size:12px;
+  font-weight:600;
+}
+
+.inventory-warning::before{
+  content:'⚠';
+  font-size:14px;
+}
