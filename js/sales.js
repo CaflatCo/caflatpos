@@ -470,7 +470,54 @@ function calculateCartTotal() {
       subtotal
     );
 
-  return subtotal + tax;
+  let discount = 0;
+
+  const discountValue =
+    Number(
+      safeGetById(
+        'discountValue'
+      )?.value || 0
+    );
+
+  const discountType =
+    safeGetById(
+      'discountType'
+    )?.value || 'percent';
+
+  if (discountValue > 0) {
+
+    if (
+      discountType ===
+      'percent'
+    ) {
+
+      discount =
+        subtotal *
+
+        (
+          discountValue / 100
+        );
+
+    }
+
+    else {
+
+      discount =
+        discountValue;
+
+    }
+
+  }
+
+  return (
+
+    subtotal +
+
+    tax -
+
+    discount
+
+  );
 
 }
 
@@ -487,12 +534,59 @@ function updateCartSummary() {
   const total =
     calculateCartTotal();
 
+  let discount = 0;
+
+  const discountValue =
+    Number(
+      safeGetById(
+        'discountValue'
+      )?.value || 0
+    );
+
+  const discountType =
+    safeGetById(
+      'discountType'
+    )?.value || 'percent';
+
+  if (discountValue > 0) {
+
+    if (
+      discountType ===
+      'percent'
+    ) {
+
+      discount =
+        subtotal *
+
+        (
+          discountValue / 100
+        );
+
+    }
+
+    else {
+
+      discount =
+        discountValue;
+
+    }
+
+  }
+
   safeGetById(
     'cartSubtotal'
   ).textContent =
 
     formatCurrency(
       subtotal
+    );
+
+  safeGetById(
+    'cartDiscount'
+  ).textContent =
+
+    formatCurrency(
+      discount
     );
 
   safeGetById(
@@ -781,49 +875,6 @@ function deductIngredients(
 
 }
 
-function saveSale(cart) {
-
-  const subtotal =
-    calculateCartSubtotal();
-
-  const tax =
-    calculateCartTax(
-      subtotal
-    );
-
-  const total =
-    calculateCartTotal();
-
-  const sales =
-    getSales();
-
-  sales.push({
-
-    id:
-      generateId(),
-
-    items:
-      [...cart],
-
-    subtotal,
-
-    tax,
-
-    total,
-
-    createdAt:
-      new Date()
-        .toISOString()
-
-  });
-
-  updateState(
-    'sales',
-    () => sales
-  );
-
-}
-
 function checkout() {
 
   const cart =
@@ -840,7 +891,340 @@ function checkout() {
 
   }
 
-  saveSale(cart);
+  safeGetById(
+    'checkoutTotal'
+  ).value =
+
+    formatCurrency(
+      calculateCartTotal()
+    );
+
+  safeGetById(
+    'checkoutTendered'
+  ).value = '';
+
+  safeGetById(
+    'checkoutChange'
+  ).value = '';
+
+  safeGetById(
+    'paymentReference'
+  ).value = '';
+
+  safeGetById(
+    'checkoutCustomer'
+  ).value = '';
+
+  safeGetById(
+    'checkoutPayment'
+  ).value = 'cash';
+
+  togglePaymentFields();
+
+  openModal(
+    'checkoutModal'
+  );
+
+}
+
+function calculateChange() {
+
+  const tendered =
+    Number(
+      safeGetById(
+        'checkoutTendered'
+      )?.value || 0
+    );
+
+  const total =
+    calculateCartTotal();
+
+  const change =
+    tendered - total;
+
+  safeGetById(
+    'checkoutChange'
+  ).value =
+
+    change >= 0
+
+      ? formatCurrency(change)
+
+      : 'Insufficient';
+
+}
+
+function togglePaymentFields() {
+
+  const paymentMethod =
+    safeGetById(
+      'checkoutPayment'
+    )?.value;
+
+  const tenderedWrap =
+    safeGetById(
+      'tenderedWrap'
+    );
+
+  const referenceWrap =
+    safeGetById(
+      'referenceWrap'
+    );
+
+  const qrSection =
+    safeGetById(
+      'qrphSection'
+    );
+
+  const paymentBadge =
+    safeGetById(
+      'paymentBadge'
+    );
+
+  const paymentQR =
+    safeGetById(
+      'paymentQRImage'
+    );
+
+  if (
+    paymentMethod === 'cash'
+  ) {
+
+    tenderedWrap.style.display =
+      'block';
+
+    referenceWrap.style.display =
+      'none';
+
+    qrSection.style.display =
+      'none';
+
+  }
+
+  else {
+
+    tenderedWrap.style.display =
+      'none';
+
+    referenceWrap.style.display =
+      'block';
+
+    qrSection.style.display =
+      'block';
+
+  }
+
+  if (
+    paymentMethod === 'gcash'
+  ) {
+
+    paymentBadge.textContent =
+      'GCASH PAYMENT';
+
+    paymentQR.src =
+      safeGetById(
+        'gcashQR'
+      )?.src;
+
+  }
+
+  if (
+    paymentMethod === 'maya'
+  ) {
+
+    paymentBadge.textContent =
+      'MAYA PAYMENT';
+
+    paymentQR.src =
+      safeGetById(
+        'mayaQR'
+      )?.src;
+
+  }
+
+  if (
+    paymentMethod === 'bank'
+  ) {
+
+    paymentBadge.textContent =
+      'BANK TRANSFER';
+
+    paymentQR.src =
+      safeGetById(
+        'rcbcQR'
+      )?.src;
+
+  }
+
+  if (
+    paymentMethod === 'qrph'
+  ) {
+
+    paymentBadge.textContent =
+      'QR PH PAYMENT';
+
+    paymentQR.src =
+      safeGetById(
+        'rcbcQR'
+      )?.src;
+
+  }
+
+}
+
+function completeSale(
+  status = 'completed'
+) {
+
+  const cart =
+    getCart();
+
+  if (!cart.length) {
+
+    return;
+
+  }
+
+  const paymentMethod =
+    safeGetById(
+      'checkoutPayment'
+    )?.value;
+
+  const tendered =
+    Number(
+      safeGetById(
+        'checkoutTendered'
+      )?.value || 0
+    );
+
+  const total =
+    calculateCartTotal();
+
+  if (
+    paymentMethod === 'cash'
+  ) {
+
+    if (tendered < total) {
+
+      showNotification(
+        'Insufficient cash',
+        'error'
+      );
+
+      return;
+
+    }
+
+  }
+
+  const subtotal =
+    calculateCartSubtotal();
+
+  const tax =
+    calculateCartTax(
+      subtotal
+    );
+
+  let discount = 0;
+
+  const discountValue =
+    Number(
+      safeGetById(
+        'discountValue'
+      )?.value || 0
+    );
+
+  const discountType =
+    safeGetById(
+      'discountType'
+    )?.value || 'percent';
+
+  if (discountValue > 0) {
+
+    if (
+      discountType ===
+      'percent'
+    ) {
+
+      discount =
+        subtotal *
+
+        (
+          discountValue / 100
+        );
+
+    }
+
+    else {
+
+      discount =
+        discountValue;
+
+    }
+
+  }
+
+  const sales =
+    getSales();
+
+  sales.push({
+
+    id:
+      generateId(),
+
+    receiptNumber:
+
+      'RCPT-' +
+
+      Date.now(),
+
+    items:
+      [...cart],
+
+    subtotal,
+
+    tax,
+
+    discount,
+
+    total,
+
+    paymentMethod,
+
+    tendered,
+
+    change:
+
+      paymentMethod === 'cash'
+
+        ? tendered - total
+
+        : 0,
+
+    customer:
+
+      safeGetById(
+        'checkoutCustomer'
+      )?.value || '',
+
+    paymentReference:
+
+      safeGetById(
+        'paymentReference'
+      )?.value || '',
+
+    status,
+
+    createdAt:
+      new Date()
+        .toISOString()
+
+  });
+
+  updateState(
+    'sales',
+    () => sales
+  );
 
   deductProductInventory(
     cart
@@ -851,6 +1235,10 @@ function checkout() {
   );
 
   setCart([]);
+
+  closeModal(
+    'checkoutModal'
+  );
 
   renderProductsTable();
 
@@ -863,7 +1251,13 @@ function checkout() {
   renderHeldOrders();
 
   showNotification(
-    'Checkout complete',
+
+    status === 'pending'
+
+      ? 'Sale marked pending'
+
+      : 'Payment successful',
+
     'success'
   );
 
@@ -890,6 +1284,13 @@ function initializeSalesEventListeners() {
   )?.addEventListener(
     'click',
     holdCurrentOrder
+  );
+
+  safeGetById(
+    'applyDiscountBtn'
+  )?.addEventListener(
+    'click',
+    updateCartSummary
   );
 
 }
