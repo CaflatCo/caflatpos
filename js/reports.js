@@ -4,319 +4,396 @@ function getSales() {
 
 }
 
-function calculateTotalRevenue() {
+function getLowStockProducts() {
 
-  const cachedRevenue =
-    getCache(
-      'totalRevenue'
-    );
+  return getProducts().filter(
 
-  if (cachedRevenue !== null) {
+    product =>
 
-    return cachedRevenue;
+      Number(product.stock || 0)
 
-  }
+      <=
 
-  const revenue =
-    measurePerformance(
+      Number(
+        product.lowStockThreshold || 0
+      )
 
-      'calculate-total-revenue',
-
-      () => {
-
-        const sales =
-          getSales();
-
-        return sales.reduce(
-
-          (total, sale) => {
-
-            return (
-
-              total +
-
-              Number(
-                sale.total || 0
-              )
-
-            );
-
-          },
-
-          0
-
-        );
-
-      }
-
-    );
-
-  setCache(
-    'totalRevenue',
-    revenue
   );
 
-  return revenue;
+}
+
+function getLowStockIngredients() {
+
+  return getIngredients().filter(
+
+    ingredient =>
+
+      Number(ingredient.stock || 0)
+
+      <=
+
+      Number(
+        ingredient.reorderLevel || 0
+      )
+
+  );
+
+}
+
+function calculateTotalRevenue() {
+
+  return getSales().reduce(
+
+    (total, sale) =>
+
+      total +
+
+      Number(sale.total || 0),
+
+    0
+
+  );
 
 }
 
 function calculateTotalOrders() {
 
-  const cachedOrders =
-    getCache(
-      'totalOrders'
-    );
-
-  if (cachedOrders !== null) {
-
-    return cachedOrders;
-
-  }
-
-  const orders =
-    measurePerformance(
-
-      'calculate-total-orders',
-
-      () => {
-
-        return getSales().length;
-
-      }
-
-    );
-
-  setCache(
-    'totalOrders',
-    orders
-  );
-
-  return orders;
+  return getSales().length;
 
 }
 
 function calculateAverageOrderValue() {
 
-  const cachedAverage =
-    getCache(
-      'averageOrderValue'
-    );
+  const sales =
+    getSales();
 
-  if (cachedAverage !== null) {
+  if (!sales.length) {
 
-    return cachedAverage;
+    return 0;
 
   }
 
-  const average =
-    measurePerformance(
+  return (
 
-      'calculate-average-order',
+    calculateTotalRevenue() /
 
-      () => {
+    sales.length
 
-        const sales =
-          getSales();
-
-        if (!sales.length) {
-
-          return 0;
-
-        }
-
-        return (
-
-          calculateTotalRevenue() /
-
-          sales.length
-
-        );
-
-      }
-
-    );
-
-  setCache(
-    'averageOrderValue',
-    average
   );
-
-  return average;
 
 }
 
 function getTopProducts() {
 
-  const cachedProducts =
-    getCache(
-      'topProducts'
-    );
+  const sales =
+    getSales();
 
-  if (cachedProducts !== null) {
+  const map = {};
 
-    return cachedProducts;
+  sales.forEach(sale => {
 
-  }
+    sale.items.forEach(item => {
 
-  const products =
-    measurePerformance(
+      if (!map[item.name]) {
 
-      'calculate-top-products',
+        map[item.name] = {
 
-      () => {
+          quantity: 0,
 
-        const sales =
-          getSales();
+          revenue: 0
 
-        const productMap = {};
-
-        sales.forEach(sale => {
-
-          sale.items.forEach(item => {
-
-            if (
-              !productMap[item.name]
-            ) {
-
-              productMap[item.name] = 0;
-
-            }
-
-            productMap[item.name] +=
-              Number(
-                item.quantity || 0
-              );
-
-          });
-
-        });
-
-        return Object.entries(
-          productMap
-        )
-
-          .sort(
-            (a, b) => b[1] - a[1]
-          )
-
-          .slice(0, 5);
+        };
 
       }
 
-    );
+      map[item.name].quantity +=
 
-  setCache(
-    'topProducts',
-    products
-  );
+        Number(
+          item.quantity || 0
+        );
 
-  return products;
+      map[item.name].revenue +=
+
+        Number(item.price || 0) *
+
+        Number(item.quantity || 0);
+
+    });
+
+  });
+
+  return Object.entries(map)
+
+    .map(([name, data]) => ({
+
+      name,
+
+      quantity:
+        data.quantity,
+
+      revenue:
+        data.revenue
+
+    }))
+
+    .sort(
+      (a, b) =>
+
+        b.quantity - a.quantity
+    )
+
+    .slice(0, 5);
 
 }
 
 function updateDashboardStats() {
 
-  safeRender(
+  const statsGrid =
+    safeGetById(
+      'statsGrid'
+    );
 
-    'dashboard-stats',
+  if (!statsGrid) return;
 
-    () => {
+  const revenue =
+    calculateTotalRevenue();
 
-      const revenueElement =
-        safeGetById(
-          'dashboardRevenue'
-        );
+  const orders =
+    calculateTotalOrders();
 
-      const ordersElement =
-        safeGetById(
-          'dashboardOrders'
-        );
+  const average =
+    calculateAverageOrderValue();
 
-      const averageElement =
-        safeGetById(
-          'dashboardAverage'
-        );
+  const lowStockCount =
 
-      const revenue =
-        calculateTotalRevenue();
+    getLowStockProducts().length +
 
-      const orders =
-        calculateTotalOrders();
+    getLowStockIngredients().length;
 
-      const average =
-        calculateAverageOrderValue();
+  statsGrid.innerHTML = `
 
-      if (revenueElement) {
+    <div class="stat-card">
+      <div class="stat-label">
+        Revenue
+      </div>
+      <div class="stat-value">
+        ${formatCurrency(revenue)}
+      </div>
+    </div>
 
-        revenueElement.textContent =
-          formatCurrency(
-            revenue
-          );
+    <div class="stat-card">
+      <div class="stat-label">
+        Orders
+      </div>
+      <div class="stat-value">
+        ${orders}
+      </div>
+    </div>
 
-      }
+    <div class="stat-card">
+      <div class="stat-label">
+        Average Order
+      </div>
+      <div class="stat-value">
+        ${formatCurrency(average)}
+      </div>
+    </div>
 
-      if (ordersElement) {
+    <div class="stat-card">
+      <div class="stat-label">
+        Low Stock Alerts
+      </div>
+      <div class="stat-value">
+        ${lowStockCount}
+      </div>
+    </div>
 
-        ordersElement.textContent =
-          orders;
+  `;
 
-      }
+  renderLowStockTable();
 
-      if (averageElement) {
-
-        averageElement.textContent =
-          formatCurrency(
-            average
-          );
-
-      }
-
-      if (
-        typeof trackMetric ===
-        'function'
-      ) {
-
-        trackMetric(
-
-          'dashboard_updated',
-
-          {
-
-            revenue,
-
-            orders,
-
-            average
-
-          }
-
-        );
-
-      }
-
-    }
-
-  );
+  renderTopProducts();
 
 }
 
-function refreshReportsCache() {
+function renderTopProducts() {
 
-  clearCache(
-    'totalRevenue'
-  );
+  const table =
+    safeQuery(
+      '#topProductsTable tbody'
+    );
 
-  clearCache(
-    'totalOrders'
-  );
+  if (!table) return;
 
-  clearCache(
-    'averageOrderValue'
-  );
+  table.innerHTML = '';
 
-  clearCache(
-    'topProducts'
-  );
+  const products =
+    getTopProducts();
+
+  if (!products.length) {
+
+    table.innerHTML = `
+
+      <tr>
+
+        <td colspan="4">
+
+          No sales yet
+
+        </td>
+
+      </tr>
+
+    `;
+
+    return;
+
+  }
+
+  products.forEach(product => {
+
+    const row =
+      document.createElement(
+        'tr'
+      );
+
+    row.innerHTML = `
+
+      <td>
+        ${product.name}
+      </td>
+
+      <td>
+        ${product.quantity}
+      </td>
+
+      <td>
+        ${formatCurrency(
+          product.revenue
+        )}
+      </td>
+
+      <td>
+        —
+      </td>
+
+    `;
+
+    table.appendChild(row);
+
+  });
+
+}
+
+function renderLowStockTable() {
+
+  const table =
+    safeQuery(
+      '#lowStockTable tbody'
+    );
+
+  if (!table) return;
+
+  table.innerHTML = '';
+
+  const productAlerts =
+    getLowStockProducts();
+
+  const ingredientAlerts =
+    getLowStockIngredients();
+
+  const alerts = [
+
+    ...productAlerts.map(item => ({
+
+      name: item.name,
+
+      stock: item.stock,
+
+      reorder:
+        item.lowStockThreshold,
+
+      type: 'Product'
+
+    })),
+
+    ...ingredientAlerts.map(item => ({
+
+      name: item.name,
+
+      stock: item.stock,
+
+      reorder:
+        item.reorderLevel,
+
+      type: 'Ingredient'
+
+    }))
+
+  ];
+
+  if (!alerts.length) {
+
+    table.innerHTML = `
+
+      <tr>
+
+        <td colspan="4">
+
+          No low stock alerts
+
+        </td>
+
+      </tr>
+
+    `;
+
+    return;
+
+  }
+
+  alerts.forEach(alert => {
+
+    const row =
+      document.createElement(
+        'tr'
+      );
+
+    row.innerHTML = `
+
+      <td>
+        ${alert.name}
+      </td>
+
+      <td>
+        ${alert.stock}
+      </td>
+
+      <td>
+        ${alert.reorder}
+      </td>
+
+      <td>
+
+        <span class="badge-low-stock">
+
+          LOW STOCK
+
+        </span>
+
+      </td>
+
+    `;
+
+    table.appendChild(row);
+
+  });
+
+}
+
+function refreshDashboard() {
+
+  updateDashboardStats();
 
 }
 
@@ -326,8 +403,11 @@ document.addEventListener(
 
   () => {
 
-    updateDashboardStats();
+    refreshDashboard();
 
   }
 
 );
+
+window.refreshDashboard =
+  refreshDashboard;
