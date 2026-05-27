@@ -1,12 +1,13 @@
+let editingIngredientId =
+  null;
+
 function getIngredients() {
 
   return APP_STATE.ingredients || [];
 
 }
 
-function setIngredients(
-  ingredients
-) {
+function setIngredients(ingredients) {
 
   updateState(
     'ingredients',
@@ -15,57 +16,254 @@ function setIngredients(
 
   renderIngredientsTable();
 
+  renderIngredientDropdowns();
+
 }
 
-function renderIngredientsTable() {
+function calculateUnitCost(
+  ingredient
+) {
 
-  const table =
-    document.querySelector(
-      '#ingredientsTable tbody'
+  const qty =
+    Number(
+      ingredient.packageQty || 0
     );
 
-  if (!table) return;
+  const cost =
+    Number(
+      ingredient.packageCost || 0
+    );
 
-  table.innerHTML = '';
+  return qty > 0
+
+    ? cost / qty
+
+    : 0;
+
+}
+
+function resetIngredientForm() {
+
+  const fields = [
+
+    'ingredientId',
+    'ingredientName',
+    'ingredientPackageQty',
+    'ingredientPurchaseCost',
+    'ingredientStock',
+    'ingredientReorder'
+
+  ];
+
+  fields.forEach(id => {
+
+    const el =
+      document.getElementById(id);
+
+    if (el) {
+      el.value = '';
+    }
+
+  });
+
+  const unit =
+    document.getElementById(
+      'ingredientPurchaseUnit'
+    );
+
+  if (unit) {
+    unit.value = 'g';
+  }
+
+  editingIngredientId =
+    null;
+
+}
+
+function openIngredientModal() {
+
+  resetIngredientForm();
+
+  openModal(
+    'ingredientModal'
+  );
+
+}
+
+function renderIngredientDropdowns() {
 
   const ingredients =
     getIngredients();
 
+  const selects =
+    document.querySelectorAll(
+      '.recipe-ingredient'
+    );
+
+  selects.forEach(select => {
+
+    const currentValue =
+      select.value;
+
+    select.innerHTML = `
+
+      <option value="">
+        Select ingredient
+      </option>
+
+    `;
+
+    ingredients.forEach(
+      ingredient => {
+
+        const option =
+          document.createElement(
+            'option'
+          );
+
+        option.value =
+          ingredient.id;
+
+        option.textContent =
+
+          `${ingredient.name}
+          (${ingredient.unit || 'g'})`;
+
+        select.appendChild(
+          option
+        );
+
+      }
+    );
+
+    if (
+
+      [...select.options]
+        .some(
+          option =>
+
+            option.value
+            ===
+            currentValue
+        )
+
+    ) {
+
+      select.value =
+        currentValue;
+
+    }
+
+  });
+
+}
+
+function renderIngredientsTable() {
+
+  const tableBody =
+    document.querySelector(
+      '#ingredientsTable tbody'
+    );
+
+  if (!tableBody) return;
+
+  tableBody.innerHTML = '';
+
+  const ingredients =
+    getIngredients();
+
+  if (!ingredients.length) {
+
+    tableBody.innerHTML = `
+
+      <tr>
+
+        <td
+          colspan="8"
+          class="empty-state">
+
+          No ingredients found
+
+        </td>
+
+      </tr>
+
+    `;
+
+    return;
+
+  }
+
   ingredients.forEach(
     ingredient => {
 
+      const stock =
+        Number(
+          ingredient.stock || 0
+        );
+
+      const reorderLevel =
+        Number(
+          ingredient.reorderLevel || 0
+        );
+
       const unitCost =
-
-        ingredient.packageQty > 0
-
-          ? (
-              ingredient.packageCost
-              /
-              ingredient.packageQty
-            )
-
-          : 0;
+        calculateUnitCost(
+          ingredient
+        );
 
       const row =
         document.createElement(
           'tr'
         );
 
+      if (
+        stock <= reorderLevel
+      ) {
+
+        row.classList.add(
+          'low-stock-row'
+        );
+
+      }
+
       row.innerHTML = `
 
-        <td>${ingredient.name}</td>
+        <td>
+          ${ingredient.name || '-'}
+        </td>
 
-        <td>${ingredient.unit}</td>
+        <td>
+          ${ingredient.unit || 'g'}
+        </td>
 
-        <td>${ingredient.packageQty}</td>
+        <td>
+          ${Number(
+            ingredient.packageQty || 0
+          )}
+        </td>
 
-        <td>${formatCurrency(ingredient.packageCost)}</td>
+        <td>
+          ${formatCurrency(
+            Number(
+              ingredient.packageCost || 0
+            )
+          )}
+        </td>
 
-        <td>${formatCurrency(unitCost)}</td>
+        <td>
+          ${formatCurrency(unitCost)}
+          /
+          ${ingredient.unit || 'g'}
+        </td>
 
-        <td>${ingredient.stock}</td>
+        <td>
+          ${stock}
+        </td>
 
-        <td>${ingredient.reorderLevel}</td>
+        <td>
+          ${reorderLevel}
+        </td>
 
         <td>
 
@@ -73,6 +271,7 @@ function renderIngredientsTable() {
 
             <button
               class="btn btn-sm"
+              type="button"
               onclick="editIngredient('${ingredient.id}')">
 
               Edit
@@ -81,6 +280,7 @@ function renderIngredientsTable() {
 
             <button
               class="btn btn-sm"
+              type="button"
               onclick="deleteIngredient('${ingredient.id}')">
 
               Delete
@@ -93,7 +293,9 @@ function renderIngredientsTable() {
 
       `;
 
-      table.appendChild(row);
+      tableBody.appendChild(
+        row
+      );
 
     }
   );
@@ -102,13 +304,29 @@ function renderIngredientsTable() {
 
 function saveIngredient() {
 
+  const name =
+    document.getElementById(
+      'ingredientName'
+    )?.value?.trim() || '';
+
+  if (!name) {
+
+    showNotification(
+      'Ingredient name is required',
+      'error'
+    );
+
+    return;
+
+  }
+
   const ingredients =
     getIngredients();
 
   const ingredientId =
     document.getElementById(
       'ingredientId'
-    )?.value;
+    )?.value || '';
 
   const ingredient = {
 
@@ -116,10 +334,7 @@ function saveIngredient() {
       ingredientId ||
       generateId(),
 
-    name:
-      document.getElementById(
-        'ingredientName'
-      )?.value || '',
+    name,
 
     unit:
       document.getElementById(
@@ -152,7 +367,10 @@ function saveIngredient() {
         document.getElementById(
           'ingredientReorder'
         )?.value || 0
-      )
+      ),
+
+    updatedAt:
+      new Date().toISOString()
 
   };
 
@@ -164,6 +382,7 @@ function saveIngredient() {
         String(item.id)
         ===
         String(ingredient.id)
+
     );
 
   if (existingIndex !== -1) {
@@ -171,9 +390,7 @@ function saveIngredient() {
     ingredients[existingIndex] =
       ingredient;
 
-  }
-
-  else {
+  } else {
 
     ingredients.push(
       ingredient
@@ -188,6 +405,8 @@ function saveIngredient() {
   closeModal(
     'ingredientModal'
   );
+
+  resetIngredientForm();
 
   showNotification(
     'Ingredient saved',
@@ -206,44 +425,48 @@ function editIngredient(id) {
         String(item.id)
         ===
         String(id)
+
     );
 
   if (!ingredient) return;
 
+  editingIngredientId =
+    ingredient.id;
+
   document.getElementById(
     'ingredientId'
   ).value =
-    ingredient.id;
+    ingredient.id || '';
 
   document.getElementById(
     'ingredientName'
   ).value =
-    ingredient.name;
+    ingredient.name || '';
 
   document.getElementById(
     'ingredientPurchaseUnit'
   ).value =
-    ingredient.unit;
+    ingredient.unit || 'g';
 
   document.getElementById(
     'ingredientPackageQty'
   ).value =
-    ingredient.packageQty;
+    ingredient.packageQty || '';
 
   document.getElementById(
     'ingredientPurchaseCost'
   ).value =
-    ingredient.packageCost;
+    ingredient.packageCost || '';
 
   document.getElementById(
     'ingredientStock'
   ).value =
-    ingredient.stock;
+    ingredient.stock || '';
 
   document.getElementById(
     'ingredientReorder'
   ).value =
-    ingredient.reorderLevel;
+    ingredient.reorderLevel || '';
 
   openModal(
     'ingredientModal'
@@ -268,6 +491,7 @@ function deleteIngredient(id) {
         String(item.id)
         !==
         String(id)
+
     );
 
   setIngredients(updated);
@@ -280,13 +504,42 @@ function deleteIngredient(id) {
 }
 
 document.addEventListener(
-
   'DOMContentLoaded',
-
   () => {
 
     renderIngredientsTable();
 
-  }
+    renderIngredientDropdowns();
 
+  }
 );
+
+window.getIngredients =
+  getIngredients;
+
+window.setIngredients =
+  setIngredients;
+
+window.calculateUnitCost =
+  calculateUnitCost;
+
+window.renderIngredientsTable =
+  renderIngredientsTable;
+
+window.renderIngredientDropdowns =
+  renderIngredientDropdowns;
+
+window.saveIngredient =
+  saveIngredient;
+
+window.editIngredient =
+  editIngredient;
+
+window.deleteIngredient =
+  deleteIngredient;
+
+window.openIngredientModal =
+  openIngredientModal;
+
+window.resetIngredientForm =
+  resetIngredientForm;
