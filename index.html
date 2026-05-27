@@ -275,8 +275,7 @@
         <thead>
           <tr>
             <th>Receipt #</th><th>Date</th><th>Items</th>
-            <th>Subtotal</th><th>Discount</th><th>Tax</th>
-            <th>Total</th><th>Profit</th><th>Payment</th><th>Actions</th>
+            <th>Subtotal</th><th>Total</th><th>Actions</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -387,7 +386,7 @@
       <div class="section-title">Categories</div>
       <div id="categoryList"></div>
       <div class="form-row" style="margin-top:10px;">
-        <input type="text" id="newCategory" placeholder="New category name" style="padding:9px; border:1px solid #000;" />
+        <input type="text" id="newCategoryInput" placeholder="New category name" style="padding:9px; border:1px solid #000;" />
         <button class="btn btn-secondary" onclick="addCategory()">Add Category</button>
       </div>
 
@@ -762,6 +761,182 @@
     </div>
   </div>
 </div>
+
+
+<script>
+(function () {
+  function getCartTotalText() {
+    const el = document.getElementById('cartTotal');
+    return (el && el.textContent ? el.textContent : '0.00').trim();
+  }
+
+  function parseMoney(value) {
+    const n = Number(String(value || '').replace(/[^0-9.-]/g, ''));
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  window.addCategory = function () {
+    const input = document.getElementById('newCategoryInput');
+    if (!input) return;
+
+    const value = input.value.trim();
+    if (!value) {
+      showNotification && showNotification('Category name is required', 'error');
+      return;
+    }
+
+    const categories = Array.isArray(APP_STATE?.categories) ? [...APP_STATE.categories] : [];
+    const exists = categories.some(c => String(c).toLowerCase() === value.toLowerCase());
+    if (exists) {
+      showNotification && showNotification('Category already exists', 'error');
+      return;
+    }
+
+    categories.push(value);
+    if (typeof updateState === 'function') {
+      updateState('categories', () => categories);
+    } else if (window.APP_STATE) {
+      APP_STATE.categories = categories;
+    }
+
+    input.value = '';
+    if (typeof renderCategories === 'function') renderCategories();
+    if (typeof renderCategoryOptions === 'function') renderCategoryOptions();
+    showNotification && showNotification('Category added', 'success');
+  };
+
+  window.exportData = function () {
+    const payload = {
+      exportedAt: new Date().toISOString(),
+      data: window.APP_STATE || {}
+    };
+
+    if (typeof downloadFile === 'function') {
+      downloadFile(
+        'caflatcopos-backup.json',
+        JSON.stringify(payload, null, 2),
+        'application/json'
+      );
+      showNotification && showNotification('Data exported', 'success');
+    }
+  };
+
+  window.importData = function (event) {
+    const file = event && event.target && event.target.files && event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      try {
+        const parsed = JSON.parse(e.target.result);
+        const data = parsed && parsed.data ? parsed.data : null;
+        if (!data) throw new Error('Invalid backup');
+
+        if (typeof updateState === 'function') {
+          Object.keys(data).forEach(key => {
+            updateState(key, () => data[key]);
+          });
+        } else {
+          window.APP_STATE = data;
+        }
+
+        if (typeof renderCategories === 'function') renderCategories();
+        if (typeof renderCategoryOptions === 'function') renderCategoryOptions();
+        if (typeof renderProductsTable === 'function') renderProductsTable();
+        if (typeof renderPOSProducts === 'function') renderPOSProducts();
+        if (typeof renderIngredientsTable === 'function') renderIngredientsTable();
+        if (typeof renderInventoryTable === 'function') renderInventoryTable();
+        if (typeof renderSalesTable === 'function') renderSalesTable();
+        if (typeof renderCart === 'function') renderCart();
+        if (typeof refreshDashboard === 'function') refreshDashboard();
+
+        showNotification && showNotification('Data imported successfully', 'success');
+      } catch (err) {
+        console.error(err);
+        showNotification && showNotification('Invalid backup file', 'error');
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  window.syncCheckoutFields = function () {
+    const totalText = getCartTotalText();
+    const totalInput = document.getElementById('checkoutTotal');
+    const tenderedInput = document.getElementById('checkoutTendered');
+    const changeInput = document.getElementById('checkoutChange');
+
+    if (totalInput) totalInput.value = totalText;
+    if (tenderedInput && !tenderedInput.value) {
+      tenderedInput.value = String(parseMoney(totalText).toFixed(2));
+    }
+    if (changeInput) changeInput.value = '0.00';
+  };
+
+  if (typeof window.calculateChange !== 'function') {
+    window.calculateChange = function () {
+      const total = parseMoney(getCartTotalText());
+      const tendered = parseMoney(document.getElementById('checkoutTendered')?.value || 0);
+      const change = Math.max(0, tendered - total);
+      const changeInput = document.getElementById('checkoutChange');
+      if (changeInput) changeInput.value = change.toFixed(2);
+    };
+  }
+
+  if (typeof window.togglePaymentFields !== 'function') {
+    window.togglePaymentFields = function () {
+      const method = document.getElementById('checkoutPayment')?.value || 'cash';
+      const tenderedWrap = document.getElementById('tenderedWrap');
+      const referenceWrap = document.getElementById('referenceWrap');
+      const qrphSection = document.getElementById('qrphSection');
+
+      if (tenderedWrap) tenderedWrap.style.display = method === 'cash' ? 'block' : 'none';
+      if (referenceWrap) referenceWrap.style.display = method === 'cash' ? 'none' : 'block';
+      if (qrphSection) qrphSection.style.display = method === 'cash' ? 'none' : 'block';
+
+      window.syncCheckoutFields();
+      window.calculateChange();
+    };
+  }
+
+  if (typeof window.openCheckout === 'function') {
+    const originalOpenCheckout = window.openCheckout;
+    window.openCheckout = function () {
+      const result = originalOpenCheckout.apply(this, arguments);
+      window.syncCheckoutFields();
+      window.calculateChange();
+      return result;
+    };
+  }
+
+  if (typeof window.completeSale === 'function') {
+    const originalCompleteSale = window.completeSale;
+    window.completeSale = function () {
+      const result = originalCompleteSale.apply(this, arguments);
+      if (typeof renderSalesTable === 'function') renderSalesTable();
+      if (typeof refreshDashboard === 'function') refreshDashboard();
+      if (typeof renderInventoryTable === 'function') renderInventoryTable();
+      if (typeof renderIngredientsTable === 'function') renderIngredientsTable();
+      return result;
+    };
+  }
+
+  if (typeof window.loadDemoData === 'function') {
+    const originalLoadDemoData = window.loadDemoData;
+    window.loadDemoData = function () {
+      const result = originalLoadDemoData.apply(this, arguments);
+      if (typeof renderCategories === 'function') renderCategories();
+      if (typeof renderCategoryOptions === 'function') renderCategoryOptions();
+      if (typeof renderProductsTable === 'function') renderProductsTable();
+      if (typeof renderPOSProducts === 'function') renderPOSProducts();
+      if (typeof renderIngredientsTable === 'function') renderIngredientsTable();
+      if (typeof renderSalesTable === 'function') renderSalesTable();
+      if (typeof refreshDashboard === 'function') refreshDashboard();
+      return result;
+    };
+  }
+})();
+</script>
+
 
 <!-- CORE -->
 <script src="./js/runtimeGuard.js"></script>
