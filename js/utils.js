@@ -190,7 +190,11 @@ function calculatePercentage(
   total
 ) {
 
-  if (!total) return 0;
+  if (!total) {
+
+    return 0;
+
+  }
 
   return (
     (
@@ -231,6 +235,7 @@ function downloadFile(
   URL.revokeObjectURL(url);
 
 }
+
 function measurePerformance(
   label,
   callback
@@ -270,9 +275,29 @@ function trackMetric(
 
 function toggleRecipeMode() {
 
-  console.log(
-    'Recipe mode toggled'
-  );
+  const mode =
+    safeGetById(
+      'recipeMode'
+    );
+
+  const batchWrap =
+    safeGetById(
+      'batchYieldWrap'
+    );
+
+  if (
+    !mode ||
+    !batchWrap
+  ) {
+
+    return;
+
+  }
+
+  batchWrap.style.display =
+    mode.value === 'batch'
+      ? 'block'
+      : 'none';
 
 }
 
@@ -299,6 +324,7 @@ function initializeApp() {
   );
 
 }
+
 function openModal(id) {
 
   const modal =
@@ -324,6 +350,9 @@ function openModal(id) {
   modal.style.opacity =
     '1';
 
+  modal.style.pointerEvents =
+    'auto';
+
 }
 
 function closeModal(id) {
@@ -340,6 +369,15 @@ function closeModal(id) {
   modal.style.display =
     'none';
 
+  modal.style.visibility =
+    'hidden';
+
+  modal.style.opacity =
+    '0';
+
+  modal.style.pointerEvents =
+    'none';
+
 }
 
 function exportData() {
@@ -351,6 +389,9 @@ function exportData() {
 
     inventory:
       APP_STATE.inventory || [],
+
+    ingredients:
+      APP_STATE.ingredients || [],
 
     sales:
       APP_STATE.sales || [],
@@ -374,12 +415,19 @@ function exportData() {
 
   );
 
-  showNotification(
+  if (
+    typeof showNotification ===
+    'function'
+  ) {
 
-    'Data exported successfully',
+    showNotification(
 
-    'success'
+      'Data exported successfully',
 
-  );
+      'success'
+
+    );
+
+  }
 
 }
