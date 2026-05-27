@@ -1633,3 +1633,401 @@ body.login-active{
   color:#111;
 
 }
+
+
+/* ================================
+   CAFLAT.CO POS STABILIZATION FIXES
+================================== */
+
+#productsTable,
+#ingredientsTable,
+#salesTable,
+#inventoryTable {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.table-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.table-actions .btn {
+  min-width: 72px;
+}
+
+#productsTable td:last-child,
+#ingredientsTable td:last-child,
+#salesTable td:last-child {
+  text-align: right;
+}
+
+#productGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+  gap: 22px;
+  align-content: start;
+  width: 100%;
+}
+
+.pos-product-card {
+  position: relative;
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  border-radius: 22px;
+  padding: 22px;
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  text-align: center;
+  cursor: pointer;
+  transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+  overflow: hidden;
+}
+
+.pos-product-card:hover {
+  transform: translateY(-2px);
+  border-color: #111;
+  box-shadow: 0 14px 34px rgba(0,0,0,.08);
+}
+
+.pos-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+
+.pos-product-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.pos-product-name {
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1.1;
+  margin-bottom: 12px;
+  color: #111;
+}
+
+.pos-product-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-top: 24px;
+}
+
+.pos-product-price {
+  font-size: 28px;
+  font-weight: 900;
+  color: #111;
+}
+
+.pos-product-stock {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #777;
+}
+
+.product-card-actions {
+  margin-top: 14px;
+  display: flex;
+  justify-content: center;
+}
+
+.product-options-btn {
+  width: 100%;
+}
+
+.pos-product-card.low-stock {
+  border: 1px solid #fca5a5 !important;
+  background: #fff7f7 !important;
+  position: relative;
+}
+
+.pos-product-card.low-stock::after {
+  content: none !important;
+}
+
+.pos-product-card.out-of-stock {
+  opacity: .45;
+  filter: grayscale(1);
+  cursor: not-allowed;
+}
+
+.empty-state {
+  text-align: center !important;
+  padding: 60px 20px !important;
+  color: #888;
+  font-size: 13px;
+  letter-spacing: 1px;
+}
+
+#ingredientsTable tbody td.empty-state,
+#salesTable tbody td.empty-state,
+#inventoryTable tbody td.empty-state {
+  text-align: center !important;
+}
+
+#ingredientsTable tbody td.empty-state {
+  padding: 50px 0 !important;
+  vertical-align: middle;
+}
+
+.empty-cart-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  min-height: 420px;
+}
+
+.cart-line-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  padding: 14px 0;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.cart-line-info {
+  min-width: 0;
+}
+
+.cart-line-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111;
+  margin-bottom: 4px;
+  word-break: break-word;
+}
+
+.cart-line-price {
+  font-size: 13px;
+  color: #777;
+}
+
+.cart-line-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cart-line-controls button,
+.cart-remove-btn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #111;
+  background: #fff;
+  color: #111;
+  cursor: pointer;
+  font-weight: 700;
+  border-radius: 8px;
+}
+
+.cart-line-controls span {
+  min-width: 20px;
+  text-align: center;
+  font-weight: 800;
+}
+
+.cart-line-total {
+  min-width: 96px;
+  text-align: right;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.cart-remove-btn {
+  font-size: 18px;
+}
+
+.variant-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.variant-option {
+  border: 1px solid #111;
+  background: #fff;
+  padding: 14px;
+  cursor: pointer;
+  text-align: left;
+  border-radius: 14px;
+}
+
+.variant-option:hover {
+  background: #111;
+  color: #fff;
+}
+
+.variant-card {
+  border: 1px solid #111;
+  padding: 16px;
+  margin-bottom: 14px;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.variant-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+#variantBuilder .form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  width: 100%;
+}
+
+#recipeBuilder {
+  margin-bottom: 16px;
+}
+
+#view-pos .pos-cart {
+  display: flex;
+  flex-direction: column;
+  min-width: 340px;
+}
+
+#view-pos .cart-summary {
+  margin-top: auto;
+}
+
+#view-pos .cart-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+#view-pos .cart-actions button,
+#view-pos .cart-actions .checkout-btn {
+  padding: 12px;
+  border: 1px solid #000;
+  background: #fff;
+  color: #000;
+  cursor: pointer;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+#view-pos .checkout-btn {
+  background: #000;
+  color: #fff;
+  grid-column: span 2;
+  padding: 16px;
+  font-size: 13px;
+}
+
+#checkoutModal .modal {
+  max-width: 560px;
+}
+
+#qrphSection img {
+  max-width: 100%;
+  height: auto;
+}
+
+#receiptBody {
+  font-family: 'Courier New', monospace;
+}
+
+#ingredientsTable,
+#productsTable {
+  min-width: 860px;
+}
+
+#view-dashboard .panel,
+#view-reports .panel,
+#view-products .panel,
+#view-inventory .panel,
+#view-sales .panel,
+#view-settings .panel,
+#view-ingredients .panel {
+  width: 100%;
+  overflow-x: hidden;
+}
+
+#view-dashboard .table-wrapper,
+#view-reports .table-wrapper,
+#view-products .table-wrapper,
+#view-inventory .table-wrapper,
+#view-sales .table-wrapper,
+#view-ingredients .table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+@media (max-width: 1024px) {
+  #view-pos .pos-cart {
+    min-width: 100%;
+    width: 100%;
+    border-left: none;
+    border-top: 1px solid #ddd;
+  }
+
+  .cart-line-item {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      "info controls remove"
+      "info total total";
+  }
+
+  .cart-line-info { grid-area: info; }
+  .cart-line-controls { grid-area: controls; }
+  .cart-line-total { grid-area: total; }
+  .cart-remove-btn { grid-area: remove; }
+}
+
+@media (max-width: 768px) {
+  #productGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+
+  .pos-product-card {
+    min-height: 200px;
+    padding: 16px;
+  }
+
+  .pos-product-name {
+    font-size: 17px;
+  }
+
+  .pos-product-price {
+    font-size: 22px;
+  }
+
+  .cart-line-item {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "info controls"
+      "total remove";
+  }
+
+  .cart-line-info { grid-area: info; }
+  .cart-line-controls { grid-area: controls; }
+  .cart-line-total { grid-area: total; }
+  .cart-remove-btn { grid-area: remove; }
+}
