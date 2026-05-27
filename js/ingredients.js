@@ -1,3 +1,15 @@
+/* =========================
+   Ingredients Module
+========================= */
+
+if (!window.UNITS) {
+
+  throw new Error(
+    'units.js failed to load'
+  );
+
+}
+
 function getIngredients() {
 
   return APP_STATE.ingredients || [];
@@ -9,6 +21,18 @@ function setIngredients(ingredients) {
   APP_STATE.ingredients = ingredients;
 
   saveState();
+
+}
+
+function normalizeIngredientStock(
+  quantity,
+  unit
+) {
+
+  return normalizeUnitValue(
+    quantity,
+    unit
+  );
 
 }
 
@@ -43,19 +67,29 @@ function renderIngredientsTable() {
     const row = document.createElement('tr');
 
     row.innerHTML = `
+
       <td>${ingredient.name || '-'}</td>
+
       <td>${ingredient.unit || '-'}</td>
+
       <td>${ingredient.stock || 0}</td>
+
       <td>${ingredient.cost || 0}</td>
+
       <td>${ingredient.supplier || '-'}</td>
 
       <td>
+
         <button
           class="btn btn-sm"
           onclick="deleteIngredient('${ingredient.id}')">
+
           Delete
+
         </button>
+
       </td>
+
     `;
 
     tableBody.appendChild(row);
@@ -66,17 +100,123 @@ function renderIngredientsTable() {
 
 function addIngredient(ingredient) {
 
-  const ingredients = getIngredients();
+  const ingredients =
+    getIngredients();
 
-  ingredients.push(ingredient);
+  const normalizedStock =
+    normalizeIngredientStock(
+      ingredient.stock,
+      ingredient.unit
+    );
 
-  setIngredients(ingredients);
+  ingredients.push({
+
+    ...ingredient,
+
+    stock:
+      normalizedStock
+
+  });
+
+  setIngredients(
+    ingredients
+  );
 
   renderIngredientsTable();
 
 }
 
-function deleteIngredient(ingredientId) {
+function deductIngredientStock(
+  ingredientId,
+  quantityToDeduct
+) {
+
+  const ingredients =
+    getIngredients();
+
+  const updatedIngredients =
+    ingredients.map(
+      ingredient => {
+
+        if (
+          String(ingredient.id) !==
+          String(ingredientId)
+        ) {
+
+          return ingredient;
+
+        }
+
+        return {
+
+          ...ingredient,
+
+          stock:
+            Math.max(
+              0,
+
+              Number(
+                ingredient.stock || 0
+              ) -
+
+              Number(
+                quantityToDeduct || 0
+              )
+            )
+
+        };
+
+      }
+    );
+
+  setIngredients(
+    updatedIngredients
+  );
+
+  renderIngredientsTable();
+
+}
+
+function deductRecipeIngredients(
+  product,
+  quantitySold = 1
+) {
+
+  if (!product.recipe?.length) {
+
+    return;
+
+  }
+
+  product.recipe.forEach(
+    recipeItem => {
+
+      const deductionAmount =
+
+        Number(
+          recipeItem.quantity || 0
+        ) *
+
+        Number(
+          quantitySold || 1
+        );
+
+      deductIngredientStock(
+
+        recipeItem.ingredientId,
+
+        deductionAmount
+
+      );
+
+    }
+  );
+
+}
+
+function deleteIngredient(
+  ingredientId
+) {
 
   const confirmed = confirm(
     'Delete this ingredient?'
@@ -84,27 +224,38 @@ function deleteIngredient(ingredientId) {
 
   if (!confirmed) return;
 
-  const ingredients = getIngredients();
+  const ingredients =
+    getIngredients();
 
-  const updatedIngredients = ingredients.filter(
-    ingredient => ingredient.id !== ingredientId
+  const updatedIngredients =
+    ingredients.filter(
+      ingredient =>
+        ingredient.id !== ingredientId
+    );
+
+  setIngredients(
+    updatedIngredients
   );
-
-  setIngredients(updatedIngredients);
 
   renderIngredientsTable();
 
 }
 
-function calculateRecipeCost(recipeItems = []) {
+function calculateRecipeCost(
+  recipeItems = []
+) {
 
   let totalCost = 0;
 
-  recipeItems.forEach(item => {
+  recipeItems.forEach(
+    item => {
 
-    totalCost += Number(item.cost || 0);
+      totalCost += Number(
+        item.cost || 0
+      );
 
-  });
+    }
+  );
 
   return totalCost;
 
