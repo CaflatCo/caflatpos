@@ -1,3 +1,29 @@
+class InventoryItem {
+
+  constructor(data = {}) {
+
+    this.id =
+      data.id || generateId();
+
+    this.sku =
+      data.sku || '';
+
+    this.name =
+      data.name || '';
+
+    this.category =
+      data.category || '';
+
+    this.stock =
+      Number(data.stock || 0);
+
+    this.reorderLevel =
+      Number(data.reorderLevel || 0);
+
+  }
+
+}
+
 function getInventory() {
 
   return APP_STATE.inventory || [];
@@ -15,13 +41,15 @@ function setInventory(inventory) {
 
 function renderInventoryTable() {
 
-  const tableBody = safeQuery(
-    '#inventoryTable tbody'
-  );
+  const tableBody =
+    safeQuery(
+      '#inventoryTable tbody'
+    );
 
   if (!tableBody) return;
 
-  const inventory = getInventory();
+  const inventory =
+    getInventory();
 
   tableBody.innerHTML = '';
 
@@ -29,7 +57,7 @@ function renderInventoryTable() {
 
     tableBody.innerHTML = `
       <tr>
-        <td colspan="6" class="empty-state">
+        <td colspan="6">
           No inventory items found
         </td>
       </tr>
@@ -41,42 +69,100 @@ function renderInventoryTable() {
 
   inventory.forEach(item => {
 
-    const row = document.createElement('tr');
+    const row =
+      document.createElement(
+        'tr'
+      );
 
     row.innerHTML = `
-      <td>${item.sku || '-'}</td>
-      <td>${item.name || '-'}</td>
-      <td>${item.category || '-'}</td>
-      <td>${item.stock || 0}</td>
-      <td>${item.reorderLevel || 0}</td>
+
+      <td>${item.sku}</td>
+
+      <td>${item.name}</td>
+
+      <td>${item.category}</td>
+
+      <td>${item.stock}</td>
+
+      <td>${item.reorderLevel}</td>
 
       <td>
+
+        <button
+          class="btn btn-sm"
+          onclick="editInventory('${item.id}')">
+
+          Edit
+
+        </button>
+
         <button
           class="btn btn-sm"
           onclick="adjustInventory('${item.id}')">
+
           Adjust
+
         </button>
+
       </td>
+
     `;
 
-    tableBody.appendChild(row);
+    tableBody.appendChild(
+      row
+    );
 
   });
 
 }
 
-async function adjustInventory(itemId) {
+function editInventory(id) {
 
-  const amount = Number(
-    prompt(
-      'Enter adjustment amount:'
-    )
+  const item =
+    getInventory().find(
+      inventory =>
+        String(inventory.id) ===
+        String(id)
+    );
+
+  if (!item) {
+
+    return;
+
+  }
+
+  alert(
+    `Editing inventory item: ${item.name}`
   );
+
+}
+
+function adjustInventory(id) {
+
+  const item =
+    getInventory().find(
+      inventory =>
+        String(inventory.id) ===
+        String(id)
+    );
+
+  if (!item) {
+
+    return;
+
+  }
+
+  const amount =
+    Number(
+      prompt(
+        'Adjustment amount:'
+      )
+    );
 
   if (isNaN(amount)) {
 
     showNotification(
-      'Invalid inventory adjustment',
+      'Invalid adjustment',
       'error'
     );
 
@@ -84,160 +170,25 @@ async function adjustInventory(itemId) {
 
   }
 
-  const result =
-    await executeCommand(
-      'adjustInventory',
-      {
+  item.stock += amount;
 
-        itemId,
+  setInventory(
+    [...getInventory()]
+  );
 
-        amount
+  renderInventoryTable();
 
-      }
-    );
-
-  if (!result) {
-
-    logError(
-      'Inventory adjustment failed'
-    );
-
-    return;
-
-  }
-
-  safeRender(
-    'inventory-table',
-
-    () => {
-
-      renderInventoryTable();
-
-    }
+  showNotification(
+    'Inventory adjusted',
+    'success'
   );
 
 }
 
-function getLowStockItems() {
-
-  return getInventory().filter(item => {
-
-    return (
-      Number(item.stock || 0) <=
-      Number(item.reorderLevel || 0)
-    );
-
-  });
-
-}
-
 document.addEventListener(
+
   'DOMContentLoaded',
+
   renderInventoryTable
-);
 
-registerCommand(
-  'adjustInventory',
-
-  async payload => {
-
-    return await runTransaction(
-      'adjust-inventory',
-
-      async () => {
-
-        const {
-          itemId,
-          amount
-        } = payload;
-
-        createAuditEntry(
-          'inventory_adjusted',
-          {
-
-            itemId,
-
-            amount
-
-          }
-        );
-
-        updateState(
-          'inventory',
-
-          currentInventory => {
-
-            return currentInventory.map(
-              item => {
-
-                if (
-                  item.id !== itemId
-                ) {
-
-                  return item;
-
-                }
-
-                return {
-
-                  ...item,
-
-                  stock:
-                    Number(
-                      item.stock || 0
-                    ) + amount
-
-                };
-
-              }
-            );
-
-          }
-        );
-
-        const updatedItem =
-          getInventory().find(
-            item =>
-              item.id === itemId
-          );
-
-        if (
-          updatedItem &&
-          Number(updatedItem.stock) <=
-          Number(
-            updatedItem.reorderLevel || 0
-          )
-        ) {
-
-          showNotification(
-            `${updatedItem.name} is low on stock`,
-            'warning'
-          );
-
-        } else {
-
-          showNotification(
-            'Inventory updated successfully',
-            'info'
-          );
-
-        }
-
-        emitEvent(
-          'inventoryAdjusted',
-          {
-
-            itemId,
-
-            amount
-
-          }
-        );
-
-        return true;
-
-      }
-    );
-
-  }
 );
