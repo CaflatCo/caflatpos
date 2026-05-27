@@ -299,3 +299,87 @@ function initializeApp() {
   );
 
 }
+function openModal(id) {
+
+  const modal =
+    document.getElementById(id);
+
+  if (!modal) {
+
+    console.error(
+      'Modal not found:',
+      id
+    );
+
+    return;
+
+  }
+
+  modal.style.display =
+    'flex';
+
+  modal.style.visibility =
+    'visible';
+
+  modal.style.opacity =
+    '1';
+
+}
+
+function closeModal(id) {
+
+  const modal =
+    document.getElementById(id);
+
+  if (!modal) {
+
+    return;
+
+  }
+
+  modal.style.display =
+    'none';
+
+}
+
+function exportData() {
+
+  const data = {
+
+    products:
+      APP_STATE.products || [],
+
+    inventory:
+      APP_STATE.inventory || [],
+
+    sales:
+      APP_STATE.sales || [],
+
+    settings:
+      APP_STATE.settings || {}
+
+  };
+
+  downloadFile(
+
+    'caflat-backup.json',
+
+    JSON.stringify(
+      data,
+      null,
+      2
+    ),
+
+    'application/json'
+
+  );
+
+  showNotification(
+
+    'Data exported successfully',
+
+    'success'
+
+  );
+
+}
