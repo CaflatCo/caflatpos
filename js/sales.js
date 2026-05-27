@@ -215,6 +215,208 @@ function clearCart() {
 
 }
 
+function holdCurrentOrder() {
+
+  const cart =
+    getCart();
+
+  if (!cart.length) {
+
+    showNotification(
+      'Cart is empty',
+      'error'
+    );
+
+    return;
+
+  }
+
+  const heldOrders =
+    APP_STATE.heldOrders || [];
+
+  heldOrders.push({
+
+    id:
+      generateId(),
+
+    items:
+      [...cart],
+
+    createdAt:
+      new Date()
+        .toISOString()
+
+  });
+
+  updateState(
+    'heldOrders',
+    () => heldOrders
+  );
+
+  setCart([]);
+
+  renderHeldOrders();
+
+  showNotification(
+    'Order placed on hold',
+    'success'
+  );
+
+}
+
+function restoreHeldOrder(
+  orderId
+) {
+
+  const heldOrders =
+    APP_STATE.heldOrders || [];
+
+  const order =
+    heldOrders.find(
+
+      item =>
+
+        String(item.id) ===
+        String(orderId)
+    );
+
+  if (!order) {
+
+    return;
+
+  }
+
+  setCart(order.items);
+
+  const updated =
+
+    heldOrders.filter(
+
+      item =>
+
+        String(item.id) !==
+        String(orderId)
+    );
+
+  updateState(
+    'heldOrders',
+    () => updated
+  );
+
+  renderHeldOrders();
+
+  showNotification(
+    'Held order restored',
+    'success'
+  );
+
+}
+
+function renderHeldOrders() {
+
+  const container =
+    safeGetById(
+      'heldOrdersList'
+    );
+
+  if (!container) return;
+
+  const heldOrders =
+    APP_STATE.heldOrders || [];
+
+  container.innerHTML = '';
+
+  if (!heldOrders.length) {
+
+    container.innerHTML = `
+
+      <div class="empty-state">
+
+        No held orders
+
+      </div>
+
+    `;
+
+    return;
+
+  }
+
+  heldOrders.forEach(order => {
+
+    const total =
+
+      order.items.reduce(
+
+        (sum, item) => {
+
+          return (
+
+            sum +
+
+            (
+              Number(item.price || 0)
+
+              *
+
+              Number(item.quantity || 0)
+            )
+
+          );
+
+        },
+
+        0
+
+      );
+
+    const card =
+      document.createElement(
+        'div'
+      );
+
+    card.className =
+      'held-order-card';
+
+    card.innerHTML = `
+
+      <div>
+
+        <div class="held-order-title">
+
+          Held Order
+
+        </div>
+
+        <div class="held-order-meta">
+
+          ${order.items.length}
+          items
+
+          •
+
+          ${formatCurrency(total)}
+
+        </div>
+
+      </div>
+
+      <button
+        class="btn btn-sm"
+        onclick="restoreHeldOrder('${order.id}')">
+
+        Restore
+
+      </button>
+
+    `;
+
+    container.appendChild(card);
+
+  });
+
+}
+
 function calculateCartSubtotal() {
 
   return getCart().reduce(
@@ -658,6 +860,8 @@ function checkout() {
 
   refreshDashboard();
 
+  renderHeldOrders();
+
   showNotification(
     'Checkout complete',
     'success'
@@ -681,6 +885,13 @@ function initializeSalesEventListeners() {
     checkout
   );
 
+  safeGetById(
+    'holdOrderBtn'
+  )?.addEventListener(
+    'click',
+    holdCurrentOrder
+  );
+
 }
 
 document.addEventListener(
@@ -690,6 +901,8 @@ document.addEventListener(
   () => {
 
     renderCart();
+
+    renderHeldOrders();
 
     initializeSalesEventListeners();
 
