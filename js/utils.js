@@ -42,11 +42,8 @@ function saveToStorage(
 ) {
 
   localStorage.setItem(
-
     key,
-
     JSON.stringify(value)
-
   );
 
 }
@@ -58,15 +55,10 @@ function loadFromStorage(
   try {
 
     const data =
-
-      localStorage.getItem(
-        key
-      );
+      localStorage.getItem(key);
 
     return data
-
       ? JSON.parse(data)
-
       : null;
 
   }
@@ -85,33 +77,25 @@ function removeFromStorage(
   key
 ) {
 
-  localStorage.removeItem(
-    key
-  );
+  localStorage.removeItem(key);
 
 }
 
 function safeGetById(id) {
 
-  return document.getElementById(
-    id
-  );
+  return document.getElementById(id);
 
 }
 
 function safeQuery(selector) {
 
-  return document.querySelector(
-    selector
-  );
+  return document.querySelector(selector);
 
 }
 
 function safeQueryAll(selector) {
 
-  return document.querySelectorAll(
-    selector
-  );
+  return document.querySelectorAll(selector);
 
 }
 
@@ -186,4 +170,64 @@ function throttle(
 function capitalize(text) {
 
   return String(text || '')
-    .charAt(
+    .charAt(0)
+    .toUpperCase() +
+
+    String(text || '')
+      .slice(1);
+
+}
+
+function formatNumber(value) {
+
+  return Number(value || 0)
+    .toLocaleString();
+
+}
+
+function calculatePercentage(
+  value,
+  total
+) {
+
+  if (!total) return 0;
+
+  return (
+    (
+      Number(value || 0) /
+      Number(total || 0)
+    ) * 100
+  ).toFixed(2);
+
+}
+
+function downloadFile(
+  filename,
+  content,
+  type = 'text/plain'
+) {
+
+  const blob = new Blob(
+    [content],
+    { type }
+  );
+
+  const url =
+    URL.createObjectURL(blob);
+
+  const link =
+    document.createElement('a');
+
+  link.href = url;
+
+  link.download = filename;
+
+  document.body.appendChild(link);
+
+  link.click();
+
+  document.body.removeChild(link);
+
+  URL.revokeObjectURL(url);
+
+}
