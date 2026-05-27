@@ -1,439 +1,518 @@
-function getProducts() {
+function getCart() {
 
-  return APP_STATE.products || [];
+  return APP_STATE.cart || [];
 
 }
 
-function setProducts(products) {
+function setCart(cart) {
 
   updateState(
-    'products',
-    () => products
+    'cart',
+    () => cart
   );
+
+  renderCart();
 
 }
 
-function renderProductsTable() {
+function addToCart(productId) {
 
-  const tableBody = safeQuery(
-    '#productsTable tbody'
-  );
+  const product =
+    getProducts().find(
 
-  if (!tableBody) return;
+      item =>
 
-  const products = getProducts();
+        String(item.id) ===
+        String(productId)
+    );
 
-  tableBody.innerHTML = '';
-
-  if (!products.length) {
-
-    tableBody.innerHTML = `
-      <tr>
-        <td colspan="8" class="empty-state">
-          No products found
-        </td>
-      </tr>
-    `;
+  if (!product) {
 
     return;
 
   }
 
-  products.forEach(product => {
+  const cart =
+    getCart();
 
-    const row = document.createElement('tr');
+  const existing =
+    cart.find(
 
-    row.innerHTML = `
-      <td>${product.sku || '-'}</td>
+      item =>
 
-      <td>${product.name || '-'}</td>
-
-      <td>${product.category || '-'}</td>
-
-      <td>${product.cost || 0}</td>
-
-      <td>${product.price || 0}</td>
-
-      <td>${product.margin || 0}%</td>
-
-      <td>${product.stock || 0}</td>
-
-      <td>
-
-        <button
-          class="btn btn-sm"
-          onclick="editProduct('${product.id}')">
-
-          Edit
-
-        </button>
-
-        <button
-          class="btn btn-sm"
-          onclick="deleteProduct('${product.id}')">
-
-          Delete
-
-        </button>
-
-      </td>
-    `;
-
-    tableBody.appendChild(row);
-
-  });
-
-}
-
-function openProductModal() {
-
-  openModal('productModal');
-
-}
-
-function closeProductModal() {
-
-  closeModal('productModal');
-
-}
-
-function collectRecipeItems() {
-
-  const rows =
-    document.querySelectorAll(
-      '#recipeBuilder .recipe-row'
+        String(item.id) ===
+        String(product.id)
     );
 
-  return [...rows].map(row => {
+  if (existing) {
 
-    return {
-
-      ingredientId:
-        row.querySelector(
-          '.recipe-ingredient'
-        )?.value || '',
-
-      quantity:
-        Number(
-          row.querySelector(
-            '.recipe-qty'
-          )?.value || 0
-        )
-
-    };
-
-  });
-
-}
-
-async function saveProduct() {
-
-  const name =
-    safeGetById(
-      'productName'
-    )?.value?.trim();
-
-  const category =
-    safeGetById(
-      'productCategory'
-    )?.value?.trim();
-
-  const cost =
-    Number(
-      safeGetById(
-        'productCost'
-      )?.value || 0
-    );
-
-  const price =
-    Number(
-      safeGetById(
-        'productPrice'
-      )?.value || 0
-    );
-
-  const stock =
-    Number(
-      safeGetById(
-        'productStock'
-      )?.value || 0
-    );
-
-  const sku =
-    safeGetById(
-      'productSku'
-    )?.value?.trim();
-
-  const margin =
-    price > 0
-      ? (
-          (
-            (price - cost) /
-            price
-          ) * 100
-        ).toFixed(2)
-      : 0;
-
-  const product = {
-
-    sku,
-
-    name,
-
-    category,
-
-    cost,
-
-    price,
-
-    stock,
-
-    margin,
-
-    recipe:
-      collectRecipeItems()
-
-  };
-
-  const result =
-    await executeCommand(
-      'createProduct',
-      {
-
-        product
-
-      }
-    );
-
-  if (!result) {
-
-    logError(
-      'Product creation failed'
-    );
-
-    return;
+    existing.quantity += 1;
 
   }
 
-  safeRender(
-    'products-table',
+  else {
 
-    () => {
+    cart.push({
 
-      renderProductsTable();
+      ...product,
 
-    }
-  );
+      quantity: 1
 
-  closeProductModal();
+    });
 
-}
+  }
 
-function editProduct(productId) {
-
-  console.log(
-    'Edit product:',
-    productId
-  );
-
-}
-
-function deleteProduct(productId) {
-
-  const confirmed = confirm(
-    'Delete this product?'
-  );
-
-  if (!confirmed) return;
-
-  createAuditEntry(
-    'product_deleted',
-    {
-
-      productId
-
-    }
-  );
-
-  updateState(
-    'products',
-
-    currentProducts => {
-
-      return currentProducts.filter(
-        product =>
-          product.id !== productId
-      );
-
-    }
-  );
+  setCart(cart);
 
   showNotification(
-    'Product deleted',
-    'info'
-  );
-
-  safeRender(
-    'products-table',
-
-    () => {
-
-      renderProductsTable();
-
-    }
+    `${product.name} added`,
+    'success'
   );
 
 }
 
-document.addEventListener(
-  'DOMContentLoaded',
-  renderProductsTable
-);
+function removeFromCart(productId) {
 
-function initializeProductEventListeners() {
+  const updated =
 
-  const addVariantBtn =
-    safeGetById('addVariantBtn');
+    getCart().filter(
 
-  if (addVariantBtn) {
+      item =>
 
-    addVariantBtn.addEventListener(
-      'click',
-      addVariantRow
+        String(item.id) !==
+        String(productId)
     );
 
-  }
-
-  const recipeMode =
-    safeGetById('recipeMode');
-
-  if (recipeMode) {
-
-    recipeMode.addEventListener(
-      'change',
-      toggleRecipeMode
-    );
-
-  }
-
-  const addRecipeBtn =
-    safeGetById('addRecipeBtn');
-
-  if (addRecipeBtn) {
-
-    addRecipeBtn.addEventListener(
-      'click',
-      addRecipeRow
-    );
-
-  }
-
-  const closeBtn =
-    safeGetById(
-      'closeProductModalBtn'
-    );
-
-  if (closeBtn) {
-
-    closeBtn.addEventListener(
-      'click',
-      () => closeModal('productModal')
-    );
-
-  }
-
-  const saveBtn =
-    safeGetById(
-      'saveProductBtn'
-    );
-
-  if (saveBtn) {
-
-    saveBtn.addEventListener(
-      'click',
-      saveProduct
-    );
-
-  }
+  setCart(updated);
 
 }
 
-document.addEventListener(
-  'DOMContentLoaded',
-  initializeProductEventListeners
-);
+function clearCart() {
 
-registerCommand(
-  'createProduct',
+  setCart([]);
 
-  async payload => {
+}
 
-    return await runTransaction(
-      'create-product',
+function calculateCartSubtotal() {
 
-      async () => {
+  return getCart().reduce(
 
-        const product =
-          payload.product;
+    (total, item) => {
 
-        const valid =
-          validateProductData(
-            product
-          );
+      return (
 
-        if (!valid) {
+        total +
 
-          return false;
+        (
+          Number(item.price || 0)
 
-        }
+          *
 
-        createAuditEntry(
-          'product_created',
-          {
+          Number(item.quantity || 0)
+        )
 
-            productName:
-              product.name
+      );
 
-          }
+    },
+
+    0
+
+  );
+
+}
+
+function calculateCartTax(subtotal) {
+
+  const taxRate =
+
+    Number(
+      APP_STATE.settings
+        ?.taxRate || 0
+    );
+
+  return subtotal *
+
+    (taxRate / 100);
+
+}
+
+function calculateCartTotal() {
+
+  const subtotal =
+    calculateCartSubtotal();
+
+  const tax =
+    calculateCartTax(
+      subtotal
+    );
+
+  return subtotal + tax;
+
+}
+
+function updateCartSummary() {
+
+  const subtotal =
+    calculateCartSubtotal();
+
+  const tax =
+    calculateCartTax(
+      subtotal
+    );
+
+  const total =
+    calculateCartTotal();
+
+  safeGetById(
+    'cartSubtotal'
+  ).textContent =
+
+    formatCurrency(
+      subtotal
+    );
+
+  safeGetById(
+    'cartTax'
+  ).textContent =
+
+    formatCurrency(
+      tax
+    );
+
+  safeGetById(
+    'cartTotal'
+  ).textContent =
+
+    formatCurrency(
+      total
+    );
+
+}
+
+function renderCart() {
+
+  const container =
+    safeGetById(
+      'cartItems'
+    );
+
+  if (!container) return;
+
+  container.innerHTML = '';
+
+  const cart =
+    getCart();
+
+  if (!cart.length) {
+
+    container.innerHTML = `
+
+      <div class="empty-state">
+
+        Cart is empty
+
+      </div>
+
+    `;
+
+    updateCartSummary();
+
+    return;
+
+  }
+
+  cart.forEach(item => {
+
+    const card =
+      document.createElement(
+        'div'
+      );
+
+    card.className =
+      'cart-item';
+
+    card.innerHTML = `
+
+      <div>
+
+        <strong>
+          ${item.name}
+        </strong>
+
+        <div>
+
+          ${item.quantity}
+
+          ×
+
+          ${formatCurrency(item.price)}
+
+        </div>
+
+      </div>
+
+      <button
+        class="btn btn-sm"
+        onclick="removeFromCart('${item.id}')">
+
+        Remove
+
+      </button>
+
+    `;
+
+    container.appendChild(
+      card
+    );
+
+  });
+
+  updateCartSummary();
+
+}
+
+function deductProductInventory(
+  cart
+) {
+
+  const updated =
+    getProducts().map(product => {
+
+      const sold =
+        cart.find(
+
+          item =>
+
+            String(item.id) ===
+            String(product.id)
         );
 
-        updateState(
-          'products',
+      if (!sold) {
 
-          currentProducts => {
+        return product;
 
-            return [
+      }
 
-              ...currentProducts,
+      return {
 
-              {
+        ...product,
 
-                ...product,
+        stock:
 
-                id:
-                  Date.now()
+          Number(product.stock || 0)
+
+          -
+
+          Number(sold.quantity || 0)
+
+      };
+
+    });
+
+  setProducts(updated);
+
+}
+
+function deductIngredients(
+  cart
+) {
+
+  const updated =
+    getIngredients().map(
+      ingredient => {
+
+        let deduction = 0;
+
+        cart.forEach(product => {
+
+          if (
+            !Array.isArray(
+              product.recipe
+            )
+          ) return;
+
+          product.recipe.forEach(
+            recipeItem => {
+
+              if (
+
+                String(
+                  recipeItem.ingredientId
+                ) ===
+
+                String(
+                  ingredient.id
+                )
+
+              ) {
+
+                let qty =
+
+                  Number(
+                    recipeItem.quantity || 0
+                  ) *
+
+                  Number(
+                    product.quantity || 0
+                  );
+
+                if (
+                  product.recipeMode ===
+                  'batch'
+                ) {
+
+                  qty =
+
+                    qty /
+
+                    Number(
+                      product.batchYield || 1
+                    );
+
+                }
+
+                deduction += qty;
 
               }
 
-            ];
+            }
+          );
 
-          }
-        );
+        });
 
-        showNotification(
-          'Product created successfully',
-          'info'
-        );
+        return {
 
-        emitEvent(
-          'productCreated',
-          product
-        );
+          ...ingredient,
 
-        return true;
+          stock:
+
+            Number(
+              ingredient.stock || 0
+            ) - deduction
+
+        };
 
       }
     );
 
+  setIngredients(updated);
+
+}
+
+function saveSale(cart) {
+
+  const subtotal =
+    calculateCartSubtotal();
+
+  const tax =
+    calculateCartTax(
+      subtotal
+    );
+
+  const total =
+    calculateCartTotal();
+
+  const sales =
+    getSales();
+
+  sales.push({
+
+    id:
+      generateId(),
+
+    items:
+      [...cart],
+
+    subtotal,
+
+    tax,
+
+    total,
+
+    createdAt:
+      new Date()
+        .toISOString()
+
+  });
+
+  updateState(
+    'sales',
+    () => sales
+  );
+
+}
+
+function checkout() {
+
+  const cart =
+    getCart();
+
+  if (!cart.length) {
+
+    showNotification(
+      'Cart is empty',
+      'error'
+    );
+
+    return;
+
   }
+
+  saveSale(cart);
+
+  deductProductInventory(
+    cart
+  );
+
+  deductIngredients(
+    cart
+  );
+
+  clearCart();
+
+  renderProductsTable();
+
+  renderPOSProducts();
+
+  renderIngredientsTable();
+
+  refreshDashboard();
+
+  showNotification(
+    'Checkout complete',
+    'success'
+  );
+
+}
+
+function initializeSalesEventListeners() {
+
+  safeGetById(
+    'clearCartBtn'
+  )?.addEventListener(
+    'click',
+    clearCart
+  );
+
+  safeGetById(
+    'checkoutBtn'
+  )?.addEventListener(
+    'click',
+    checkout
+  );
+
+}
+
+document.addEventListener(
+
+  'DOMContentLoaded',
+
+  () => {
+
+    renderCart();
+
+    initializeSalesEventListeners();
+
+  }
+
 );
