@@ -1,10 +1,26 @@
+window.APP_CONFIG = {
+
+  CURRENCY_SYMBOL: '₱',
+
+  DEFAULT_DECIMAL_PLACES: 2,
+
+  DATE_LOCALE: 'en-PH',
+
+  TAX_RATE: 0
+
+};
+
 function formatCurrency(value) {
 
   return (
+
     APP_CONFIG.CURRENCY_SYMBOL +
-    Number(value || 0).toFixed(
-      APP_CONFIG.DEFAULT_DECIMAL_PLACES
-    )
+
+    Number(value || 0)
+      .toFixed(
+        APP_CONFIG.DEFAULT_DECIMAL_PLACES
+      )
+
   );
 
 }
@@ -236,6 +252,50 @@ function downloadFile(
 
 }
 
+function showNotification(
+  message,
+  type = 'info'
+) {
+
+  console.log(
+    `[${type.toUpperCase()}]`,
+    message
+  );
+
+  alert(message);
+
+}
+
+async function safeAsync(
+  callback,
+  label = 'async'
+) {
+
+  try {
+
+    return await callback();
+
+  }
+
+  catch(error) {
+
+    console.error(
+      `SafeAsync failed (${label})`,
+      error
+    );
+
+    return null;
+
+  }
+
+}
+
+function runMiddleware() {
+
+  return true;
+
+}
+
 function measurePerformance(
   label,
   callback
@@ -344,15 +404,6 @@ function openModal(id) {
   modal.style.display =
     'flex';
 
-  modal.style.visibility =
-    'visible';
-
-  modal.style.opacity =
-    '1';
-
-  modal.style.pointerEvents =
-    'auto';
-
 }
 
 function closeModal(id) {
@@ -367,15 +418,6 @@ function closeModal(id) {
   }
 
   modal.style.display =
-    'none';
-
-  modal.style.visibility =
-    'hidden';
-
-  modal.style.opacity =
-    '0';
-
-  modal.style.pointerEvents =
     'none';
 
 }
@@ -415,19 +457,12 @@ function exportData() {
 
   );
 
-  if (
-    typeof showNotification ===
-    'function'
-  ) {
+  showNotification(
 
-    showNotification(
+    'Data exported successfully',
 
-      'Data exported successfully',
+    'success'
 
-      'success'
-
-    );
-
-  }
+  );
 
 }
