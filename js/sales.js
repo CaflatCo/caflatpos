@@ -1,202 +1,206 @@
-function getCart() {
+function getProducts() {
 
-  return APP_STATE.cart || [];
+  return APP_STATE.products || [];
 
 }
 
-function setCart(cart) {
+function setProducts(products) {
 
   updateState(
-    'cart',
-    () => cart
-  );
-
-  safeRender(
-    'cart',
-
-    () => {
-
-      renderCart();
-
-    }
+    'products',
+    () => products
   );
 
 }
 
-function addToCart(product) {
+function renderProductsTable() {
 
-  const cart = getCart();
-
-  const existingItem = cart.find(
-    item => item.id === product.id
+  const tableBody = safeQuery(
+    '#productsTable tbody'
   );
 
-  if (existingItem) {
+  if (!tableBody) return;
 
-    existingItem.quantity += 1;
+  const products = getProducts();
 
-  } else {
+  tableBody.innerHTML = '';
 
-    cart.push({
-      ...product,
-      quantity: 1
-    });
+  if (!products.length) {
 
-  }
-
-  setCart(cart);
-
-  showNotification(
-    `${product.name} added to cart`,
-    'info'
-  );
-
-}
-
-function removeFromCart(productId) {
-
-  const cart = getCart();
-
-  const updatedCart = cart.filter(
-    item => item.id !== productId
-  );
-
-  setCart(updatedCart);
-
-  showNotification(
-    'Item removed from cart',
-    'info'
-  );
-
-}
-
-function clearCart() {
-
-  setCart([]);
-
-  showNotification(
-    'Cart cleared',
-    'info'
-  );
-
-}
-
-function calculateCartTotal() {
-
-  const cart = getCart();
-
-  return cart.reduce((total, item) => {
-
-    return (
-      total +
-      (
-        Number(item.price || 0) *
-        Number(item.quantity || 0)
-      )
-    );
-
-  }, 0);
-
-}
-
-function renderCart() {
-
-  const cartContainer = safeGetById(
-    'cartItems'
-  );
-
-  if (!cartContainer) return;
-
-  const cart = getCart();
-
-  cartContainer.innerHTML = '';
-
-  if (!cart.length) {
-
-    cartContainer.innerHTML = `
-      <div class="empty-state">
-        Cart is empty
-      </div>
+    tableBody.innerHTML = `
+      <tr>
+        <td colspan="8" class="empty-state">
+          No products found
+        </td>
+      </tr>
     `;
-
-    updateCartTotal();
 
     return;
 
   }
 
-  cart.forEach(item => {
+  products.forEach(product => {
 
-    const cartItem =
-      document.createElement('div');
+    const row = document.createElement('tr');
 
-    cartItem.className =
-      'cart-item';
+    row.innerHTML = `
+      <td>${product.sku || '-'}</td>
 
-    cartItem.innerHTML = `
-      <div>
-        <strong>${item.name}</strong>
+      <td>${product.name || '-'}</td>
 
-        <div>
-          ${item.quantity} × ₱${item.price}
-        </div>
-      </div>
+      <td>${product.category || '-'}</td>
 
-      <button
-        class="btn btn-sm"
-        onclick="removeFromCart('${item.id}')">
-        Remove
-      </button>
+      <td>${product.cost || 0}</td>
+
+      <td>${product.price || 0}</td>
+
+      <td>${product.margin || 0}%</td>
+
+      <td>${product.stock || 0}</td>
+
+      <td>
+
+        <button
+          class="btn btn-sm"
+          onclick="editProduct('${product.id}')">
+
+          Edit
+
+        </button>
+
+        <button
+          class="btn btn-sm"
+          onclick="deleteProduct('${product.id}')">
+
+          Delete
+
+        </button>
+
+      </td>
     `;
 
-    cartContainer.appendChild(
-      cartItem
-    );
+    tableBody.appendChild(row);
 
   });
 
-  updateCartTotal();
+}
+
+function openProductModal() {
+
+  openModal('productModal');
 
 }
 
-function updateCartTotal() {
+function closeProductModal() {
 
-  const totalElement =
-    safeGetById('cartTotal');
-
-  if (!totalElement) return;
-
-  totalElement.textContent =
-    formatCurrency(
-      calculateCartTotal()
-    );
+  closeModal('productModal');
 
 }
 
-async function checkout() {
+function collectRecipeItems() {
 
-  const cart = getCart();
-
-  if (!cart.length) {
-
-    showNotification(
-      'Cart is empty',
-      'error'
+  const rows =
+    document.querySelectorAll(
+      '#recipeBuilder .recipe-row'
     );
 
-    return;
+  return [...rows].map(row => {
 
-  }
+    return {
+
+      ingredientId:
+        row.querySelector(
+          '.recipe-ingredient'
+        )?.value || '',
+
+      quantity:
+        Number(
+          row.querySelector(
+            '.recipe-qty'
+          )?.value || 0
+        )
+
+    };
+
+  });
+
+}
+
+async function saveProduct() {
+
+  const name =
+    safeGetById(
+      'productName'
+    )?.value?.trim();
+
+  const category =
+    safeGetById(
+      'productCategory'
+    )?.value?.trim();
+
+  const cost =
+    Number(
+      safeGetById(
+        'productCost'
+      )?.value || 0
+    );
+
+  const price =
+    Number(
+      safeGetById(
+        'productPrice'
+      )?.value || 0
+    );
+
+  const stock =
+    Number(
+      safeGetById(
+        'productStock'
+      )?.value || 0
+    );
+
+  const sku =
+    safeGetById(
+      'productSku'
+    )?.value?.trim();
+
+  const margin =
+    price > 0
+      ? (
+          (
+            (price - cost) /
+            price
+          ) * 100
+        ).toFixed(2)
+      : 0;
+
+  const product = {
+
+    sku,
+
+    name,
+
+    category,
+
+    cost,
+
+    price,
+
+    stock,
+
+    margin,
+
+    recipe:
+      collectRecipeItems()
+
+  };
 
   const result =
     await executeCommand(
-      'checkout',
+      'createProduct',
       {
 
-        cart,
-
-        total:
-          calculateCartTotal()
+        product
 
       }
     );
@@ -204,7 +208,7 @@ async function checkout() {
   if (!result) {
 
     logError(
-      'Checkout failed'
+      'Product creation failed'
     );
 
     return;
@@ -212,11 +216,69 @@ async function checkout() {
   }
 
   safeRender(
-    'cart',
+    'products-table',
 
     () => {
 
-      renderCart();
+      renderProductsTable();
+
+    }
+  );
+
+  closeProductModal();
+
+}
+
+function editProduct(productId) {
+
+  console.log(
+    'Edit product:',
+    productId
+  );
+
+}
+
+function deleteProduct(productId) {
+
+  const confirmed = confirm(
+    'Delete this product?'
+  );
+
+  if (!confirmed) return;
+
+  createAuditEntry(
+    'product_deleted',
+    {
+
+      productId
+
+    }
+  );
+
+  updateState(
+    'products',
+
+    currentProducts => {
+
+      return currentProducts.filter(
+        product =>
+          product.id !== productId
+      );
+
+    }
+  );
+
+  showNotification(
+    'Product deleted',
+    'info'
+  );
+
+  safeRender(
+    'products-table',
+
+    () => {
+
+      renderProductsTable();
 
     }
   );
@@ -225,57 +287,71 @@ async function checkout() {
 
 document.addEventListener(
   'DOMContentLoaded',
-  renderCart
+  renderProductsTable
 );
 
-function initializeSalesEventListeners() {
+function initializeProductEventListeners() {
 
-  const clearBtn =
-    safeGetById('clearCartBtn');
+  const addVariantBtn =
+    safeGetById('addVariantBtn');
 
-  if (clearBtn) {
+  if (addVariantBtn) {
 
-    clearBtn.addEventListener(
+    addVariantBtn.addEventListener(
       'click',
-      clearCart
+      addVariantRow
     );
 
   }
 
-  const holdBtn =
-    safeGetById('holdOrderBtn');
+  const recipeMode =
+    safeGetById('recipeMode');
 
-  if (holdBtn) {
+  if (recipeMode) {
 
-    holdBtn.addEventListener(
-      'click',
-      holdOrder
+    recipeMode.addEventListener(
+      'change',
+      toggleRecipeMode
     );
 
   }
 
-  const checkoutBtn =
-    safeGetById('checkoutBtn');
+  const addRecipeBtn =
+    safeGetById('addRecipeBtn');
 
-  if (checkoutBtn) {
+  if (addRecipeBtn) {
 
-    checkoutBtn.addEventListener(
+    addRecipeBtn.addEventListener(
       'click',
-      checkout
+      addRecipeRow
     );
 
   }
 
-  const discountBtn =
+  const closeBtn =
     safeGetById(
-      'applyDiscountBtn'
+      'closeProductModalBtn'
     );
 
-  if (discountBtn) {
+  if (closeBtn) {
 
-    discountBtn.addEventListener(
+    closeBtn.addEventListener(
       'click',
-      applyDiscount
+      () => closeModal('productModal')
+    );
+
+  }
+
+  const saveBtn =
+    safeGetById(
+      'saveProductBtn'
+    );
+
+  if (saveBtn) {
+
+    saveBtn.addEventListener(
+      'click',
+      saveProduct
     );
 
   }
@@ -284,58 +360,58 @@ function initializeSalesEventListeners() {
 
 document.addEventListener(
   'DOMContentLoaded',
-  initializeSalesEventListeners
+  initializeProductEventListeners
 );
 
 registerCommand(
-  'checkout',
+  'createProduct',
 
   async payload => {
 
     return await runTransaction(
-      'checkout',
+      'create-product',
 
       async () => {
 
-        const {
-          cart,
-          total
-        } = payload;
+        const product =
+          payload.product;
+
+        const valid =
+          validateProductData(
+            product
+          );
+
+        if (!valid) {
+
+          return false;
+
+        }
 
         createAuditEntry(
-          'checkout_completed',
+          'product_created',
           {
 
-            total,
-
-            itemCount:
-              cart.length
+            productName:
+              product.name
 
           }
         );
 
         updateState(
-          'sales',
+          'products',
 
-          currentSales => {
+          currentProducts => {
 
             return [
 
-              ...currentSales,
+              ...currentProducts,
 
               {
 
+                ...product,
+
                 id:
-                  Date.now(),
-
-                items:
-                  [...cart],
-
-                total,
-
-                createdAt:
-                  new Date()
-                    .toISOString()
+                  Date.now()
 
               }
 
@@ -344,162 +420,14 @@ registerCommand(
           }
         );
 
-        /* =========================
-           PRODUCT INVENTORY
-        ========================= */
-
-        updateState(
-          'inventory',
-
-          currentInventory => {
-
-            return currentInventory.map(
-              inventoryItem => {
-
-                const soldItem =
-                  cart.find(
-                    cartItem =>
-                      cartItem.id ===
-                      inventoryItem.id
-                  );
-
-                if (!soldItem) {
-
-                  return inventoryItem;
-
-                }
-
-                return {
-
-                  ...inventoryItem,
-
-                  stock:
-                    Number(
-                      inventoryItem.stock || 0
-                    ) -
-                    Number(
-                      soldItem.quantity || 0
-                    )
-
-                };
-
-              }
-            );
-
-          }
-        );
-
-        /* =========================
-           INGREDIENT DEDUCTION
-        ========================= */
-
-        updateState(
-          'ingredients',
-
-          currentIngredients => {
-
-            const updatedIngredients =
-              [...currentIngredients];
-
-            cart.forEach(cartItem => {
-
-              if (
-                !cartItem.recipe ||
-                !Array.isArray(
-                  cartItem.recipe
-                )
-              ) return;
-
-              cartItem.recipe.forEach(
-                recipeItem => {
-
-                  const ingredientIndex =
-                    updatedIngredients.findIndex(
-                      ingredient =>
-                        ingredient.id ===
-                        recipeItem.ingredientId
-                    );
-
-                  if (
-                    ingredientIndex === -1
-                  ) return;
-
-                  const ingredient =
-                    updatedIngredients[
-                      ingredientIndex
-                    ];
-
-                  let deductionQty =
-
-                    Number(
-                      recipeItem.quantity || 0
-                    ) *
-
-                    Number(
-                      cartItem.quantity || 0
-                    );
-
-                  /* batch recipe support */
-
-                  if (
-                    cartItem.recipeMode ===
-                    'batch'
-                  ) {
-
-                    const batchYield =
-                      Number(
-                        cartItem.batchYield || 1
-                      );
-
-                    deductionQty =
-                      deductionQty /
-                      batchYield;
-
-                  }
-
-                  updatedIngredients[
-                    ingredientIndex
-                  ] = {
-
-                    ...ingredient,
-
-                    stock:
-                      Number(
-                        ingredient.stock || 0
-                      ) - deductionQty
-
-                  };
-
-                }
-              );
-
-            });
-
-            return updatedIngredients;
-
-          }
-        );
-
-        updateState(
-          'cart',
-
-          () => []
+        showNotification(
+          'Product created successfully',
+          'info'
         );
 
         emitEvent(
-          'checkoutCompleted',
-          {
-
-            total,
-
-            cart
-
-          }
-        );
-
-        showNotification(
-          'Checkout successful',
-          'success'
+          'productCreated',
+          product
         );
 
         return true;
