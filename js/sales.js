@@ -15,64 +15,49 @@ function setCart(cart) {
 
 }
 
-function addToCart(productId) {
+function addToCart(
+  productId,
+  variant = null
+) {
+
+  const products =
+    APP_STATE.products || [];
 
   const product =
-    getProducts().find(
+    products.find(
 
       item =>
 
-        String(item.id) ===
+        String(item.id)
+        ===
         String(productId)
     );
 
-  if (!product) {
-
-    return;
-
-  }
-
-  if (
-    Number(product.stock || 0)
-    <= 0
-  ) {
-
-    showNotification(
-      'Out of stock',
-      'error'
-    );
-
-    return;
-
-  }
+  if (!product) return;
 
   const cart =
     getCart();
 
   const existing =
-    cart.find(
+    cart.find(item => {
 
-      item =>
+      return (
 
-        String(item.id) ===
-        String(product.id)
-    );
+        String(item.productId)
+        ===
+        String(productId)
 
-  if (existing) {
-
-    if (
-      existing.quantity >=
-      product.stock
-    ) {
-
-      showNotification(
-        'Insufficient stock',
-        'error'
       );
 
-      return;
+    });
 
-    }
+  const finalPrice =
+
+    variant
+      ? variant.price
+      : product.price;
+
+  if (existing) {
 
     existing.quantity += 1;
 
@@ -82,7 +67,18 @@ function addToCart(productId) {
 
     cart.push({
 
-      ...product,
+      id:
+        generateId(),
+
+      productId,
+
+      name:
+        variant
+          ? `${product.name} (${variant.name})`
+          : product.name,
+
+      price:
+        finalPrice,
 
       quantity: 1
 
@@ -92,531 +88,16 @@ function addToCart(productId) {
 
   setCart(cart);
 
-  showNotification(
-    `${product.name} added`,
-    'success'
-  );
-
-}
-
-function removeFromCart(productId) {
-
-  const updated =
-
-    getCart().filter(
-
-      item =>
-
-        String(item.id) !==
-        String(productId)
-    );
-
-  setCart(updated);
-
-}
-
-function increaseCartQty(
-  productId
-) {
-
-  const cart =
-    getCart();
-
-  const item =
-    cart.find(
-
-      item =>
-
-        String(item.id) ===
-        String(productId)
-    );
-
-  if (!item) return;
-
-  const product =
-    getProducts().find(
-
-      p =>
-
-        String(p.id) ===
-        String(productId)
-    );
-
-  if (!product) return;
-
-  if (
-    item.quantity >=
-    product.stock
-  ) {
-
-    showNotification(
-      'Insufficient stock',
-      'error'
-    );
-
-    return;
-
-  }
-
-  item.quantity += 1;
-
-  setCart(cart);
-
-}
-
-function decreaseCartQty(
-  productId
-) {
-
-  const cart =
-    getCart();
-
-  const item =
-    cart.find(
-
-      item =>
-
-        String(item.id) ===
-        String(productId)
-    );
-
-  if (!item) return;
-
-  item.quantity -= 1;
-
-  if (item.quantity <= 0) {
-
-    removeFromCart(
-      productId
-    );
-
-    return;
-
-  }
-
-  setCart(cart);
-
-}
-
-function clearCart() {
-
-  const confirmed =
-    confirm(
-      'Clear current order?'
-    );
-
-  if (!confirmed) {
-
-    return;
-
-  }
-
-  setCart([]);
-
-}
-
-function holdCurrentOrder() {
-
-  const cart =
-    getCart();
-
-  if (!cart.length) {
-
-    showNotification(
-      'Cart is empty',
-      'error'
-    );
-
-    return;
-
-  }
-
-  const heldOrders =
-    APP_STATE.heldOrders || [];
-
-  heldOrders.push({
-
-    id:
-      generateId(),
-
-    items:
-      [...cart],
-
-    createdAt:
-      new Date()
-        .toISOString()
-
-  });
-
-  updateState(
-    'heldOrders',
-    () => heldOrders
-  );
-
-  setCart([]);
-
-  renderHeldOrders();
-
-  showNotification(
-    'Order placed on hold',
-    'success'
-  );
-
-}
-
-function restoreHeldOrder(
-  orderId
-) {
-
-  const heldOrders =
-    APP_STATE.heldOrders || [];
-
-  const order =
-    heldOrders.find(
-
-      item =>
-
-        String(item.id) ===
-        String(orderId)
-    );
-
-  if (!order) {
-
-    return;
-
-  }
-
-  setCart(order.items);
-
-  const updated =
-
-    heldOrders.filter(
-
-      item =>
-
-        String(item.id) !==
-        String(orderId)
-    );
-
-  updateState(
-    'heldOrders',
-    () => updated
-  );
-
-  renderHeldOrders();
-
-  showNotification(
-    'Held order restored',
-    'success'
-  );
-
-}
-
-function renderHeldOrders() {
-
-  const container =
-    safeGetById(
-      'heldOrdersList'
-    );
-
-  if (!container) return;
-
-  const heldOrders =
-    APP_STATE.heldOrders || [];
-
-  container.innerHTML = '';
-
-  if (!heldOrders.length) {
-
-    container.innerHTML = `
-
-      <div class="empty-state">
-
-        No held orders
-
-      </div>
-
-    `;
-
-    return;
-
-  }
-
-  heldOrders.forEach(order => {
-
-    const total =
-
-      order.items.reduce(
-
-        (sum, item) => {
-
-          return (
-
-            sum +
-
-            (
-              Number(item.price || 0)
-
-              *
-
-              Number(item.quantity || 0)
-            )
-
-          );
-
-        },
-
-        0
-
-      );
-
-    const card =
-      document.createElement(
-        'div'
-      );
-
-    card.className =
-      'held-order-card';
-
-    card.innerHTML = `
-
-      <div>
-
-        <div class="held-order-title">
-
-          Held Order
-
-        </div>
-
-        <div class="held-order-meta">
-
-          ${order.items.length}
-          items
-
-          •
-
-          ${formatCurrency(total)}
-
-        </div>
-
-      </div>
-
-      <button
-        class="btn btn-sm"
-        onclick="restoreHeldOrder('${order.id}')">
-
-        Restore
-
-      </button>
-
-    `;
-
-    container.appendChild(card);
-
-  });
-
-}
-
-function calculateCartSubtotal() {
-
-  return getCart().reduce(
-
-    (total, item) => {
-
-      return (
-
-        total +
-
-        (
-          Number(item.price || 0)
-
-          *
-
-          Number(item.quantity || 0)
-        )
-
-      );
-
-    },
-
-    0
-
-  );
-
-}
-
-function calculateCartTax(subtotal) {
-
-  const taxRate =
-
-    Number(
-      APP_STATE.settings
-        ?.taxRate || 0
-    );
-
-  return subtotal *
-
-    (taxRate / 100);
-
-}
-
-function calculateCartTotal() {
-
-  const subtotal =
-    calculateCartSubtotal();
-
-  const tax =
-    calculateCartTax(
-      subtotal
-    );
-
-  let discount = 0;
-
-  const discountValue =
-    Number(
-      safeGetById(
-        'discountValue'
-      )?.value || 0
-    );
-
-  const discountType =
-    safeGetById(
-      'discountType'
-    )?.value || 'percent';
-
-  if (discountValue > 0) {
-
-    if (
-      discountType ===
-      'percent'
-    ) {
-
-      discount =
-        subtotal *
-
-        (
-          discountValue / 100
-        );
-
-    }
-
-    else {
-
-      discount =
-        discountValue;
-
-    }
-
-  }
-
-  return (
-
-    subtotal +
-
-    tax -
-
-    discount
-
-  );
-
-}
-
-function updateCartSummary() {
-
-  const subtotal =
-    calculateCartSubtotal();
-
-  const tax =
-    calculateCartTax(
-      subtotal
-    );
-
-  const total =
-    calculateCartTotal();
-
-  let discount = 0;
-
-  const discountValue =
-    Number(
-      safeGetById(
-        'discountValue'
-      )?.value || 0
-    );
-
-  const discountType =
-    safeGetById(
-      'discountType'
-    )?.value || 'percent';
-
-  if (discountValue > 0) {
-
-    if (
-      discountType ===
-      'percent'
-    ) {
-
-      discount =
-        subtotal *
-
-        (
-          discountValue / 100
-        );
-
-    }
-
-    else {
-
-      discount =
-        discountValue;
-
-    }
-
-  }
-
-  safeGetById(
-    'cartSubtotal'
-  ).textContent =
-
-    formatCurrency(
-      subtotal
-    );
-
-  safeGetById(
-    'cartDiscount'
-  ).textContent =
-
-    formatCurrency(
-      discount
-    );
-
-  safeGetById(
-    'cartTax'
-  ).textContent =
-
-    formatCurrency(
-      tax
-    );
-
-  safeGetById(
-    'cartTotal'
-  ).textContent =
-
-    formatCurrency(
-      total
-    );
-
 }
 
 function renderCart() {
 
   const container =
-    safeGetById(
+    document.getElementById(
       'cartItems'
     );
 
   if (!container) return;
-
-  container.innerHTML = '';
 
   const cart =
     getCart();
@@ -627,671 +108,138 @@ function renderCart() {
 
       <div class="empty-cart-state">
 
-        <div class="empty-cart-icon">
-
-          🛒
-
-        </div>
-
         <div class="empty-cart-title">
 
           No items yet
 
         </div>
 
-        <div class="empty-cart-subtitle">
-
-          Products added will appear here
-
-        </div>
-
       </div>
 
     `;
-
-    updateCartSummary();
 
     return;
 
   }
 
+  container.innerHTML = '';
+
   cart.forEach(item => {
 
-    const total =
-
-      Number(item.price || 0)
-
-      *
-
-      Number(item.quantity || 0);
-
-    const card =
+    const row =
       document.createElement(
         'div'
       );
 
-    card.className =
-      'cart-item-card';
+    row.className =
+      'cart-line-item';
 
-    card.innerHTML = `
+    row.innerHTML = `
 
-      <div class="cart-item-top">
+      <div class="cart-line-info">
 
-        <div>
+        <div class="cart-line-name">
 
-          <div class="cart-item-name">
-
-            ${item.name}
-
-          </div>
-
-          <div class="cart-item-price">
-
-            ${formatCurrency(item.price)}
-
-          </div>
+          ${item.name}
 
         </div>
 
-        <button
-          class="cart-remove-btn"
-          onclick="removeFromCart('${item.id}')">
+        <div class="cart-line-price">
 
-          ✕
+          ${formatCurrency(item.price)}
+
+        </div>
+
+      </div>
+
+      <div class="cart-line-controls">
+
+        <button
+          onclick="decreaseQty('${item.id}')">
+
+          −
+
+        </button>
+
+        <span>
+
+          ${item.quantity}
+
+        </span>
+
+        <button
+          onclick="increaseQty('${item.id}')">
+
+          +
 
         </button>
 
       </div>
 
-      <div class="cart-item-bottom">
+      <div class="cart-line-total">
 
-        <div class="qty-controls">
-
-          <button
-            onclick="decreaseCartQty('${item.id}')">
-
-            −
-
-          </button>
-
-          <span>
-
-            ${item.quantity}
-
-          </span>
-
-          <button
-            onclick="increaseCartQty('${item.id}')">
-
-            +
-
-          </button>
-
-        </div>
-
-        <div class="cart-item-total">
-
-          ${formatCurrency(total)}
-
-        </div>
+        ${formatCurrency(
+          item.price * item.quantity
+        )}
 
       </div>
 
     `;
 
-    container.appendChild(card);
+    container.appendChild(row);
 
   });
 
-  updateCartSummary();
-
 }
 
-function deductProductInventory(
-  cart
-) {
-
-  const updated =
-    getProducts().map(product => {
-
-      const sold =
-        cart.find(
-
-          item =>
-
-            String(item.id) ===
-            String(product.id)
-        );
-
-      if (!sold) {
-
-        return product;
-
-      }
-
-      return {
-
-        ...product,
-
-        stock:
-
-          Number(product.stock || 0)
-
-          -
-
-          Number(sold.quantity || 0)
-
-      };
-
-    });
-
-  setProducts(updated);
-
-}
-
-function deductIngredients(
-  cart
-) {
-
-  const updated =
-    getIngredients().map(
-      ingredient => {
-
-        let deduction = 0;
-
-        cart.forEach(product => {
-
-          if (
-            !Array.isArray(
-              product.recipe
-            )
-          ) return;
-
-          product.recipe.forEach(
-            recipeItem => {
-
-              if (
-
-                String(
-                  recipeItem.ingredientId
-                ) ===
-
-                String(
-                  ingredient.id
-                )
-
-              ) {
-
-                let qty =
-
-                  Number(
-                    recipeItem.quantity || 0
-                  ) *
-
-                  Number(
-                    product.quantity || 0
-                  );
-
-                if (
-                  product.recipeMode ===
-                  'batch'
-                ) {
-
-                  qty =
-
-                    qty /
-
-                    Number(
-                      product.batchYield || 1
-                    );
-
-                }
-
-                deduction += qty;
-
-              }
-
-            }
-          );
-
-        });
-
-        return {
-
-          ...ingredient,
-
-          stock:
-
-            Number(
-              ingredient.stock || 0
-            ) - deduction
-
-        };
-
-      }
-    );
-
-  setIngredients(updated);
-
-}
-
-function checkout() {
+function increaseQty(id) {
 
   const cart =
     getCart();
 
-  if (!cart.length) {
+  const item =
+    cart.find(
 
-    showNotification(
-      'Cart is empty',
-      'error'
+      item =>
+
+        String(item.id)
+        ===
+        String(id)
     );
 
-    return;
+  if (!item) return;
 
-  }
+  item.quantity += 1;
 
-  safeGetById(
-    'checkoutTotal'
-  ).value =
-
-    formatCurrency(
-      calculateCartTotal()
-    );
-
-  safeGetById(
-    'checkoutTendered'
-  ).value = '';
-
-  safeGetById(
-    'checkoutChange'
-  ).value = '';
-
-  safeGetById(
-    'paymentReference'
-  ).value = '';
-
-  safeGetById(
-    'checkoutCustomer'
-  ).value = '';
-
-  safeGetById(
-    'checkoutPayment'
-  ).value = 'cash';
-
-  togglePaymentFields();
-
-  openModal(
-    'checkoutModal'
-  );
+  setCart(cart);
 
 }
 
-function calculateChange() {
+function decreaseQty(id) {
 
-  const tendered =
-    Number(
-      safeGetById(
-        'checkoutTendered'
-      )?.value || 0
-    );
-
-  const total =
-    calculateCartTotal();
-
-  const change =
-    tendered - total;
-
-  safeGetById(
-    'checkoutChange'
-  ).value =
-
-    change >= 0
-
-      ? formatCurrency(change)
-
-      : 'Insufficient';
-
-}
-
-function togglePaymentFields() {
-
-  const paymentMethod =
-    safeGetById(
-      'checkoutPayment'
-    )?.value;
-
-  const tenderedWrap =
-    safeGetById(
-      'tenderedWrap'
-    );
-
-  const referenceWrap =
-    safeGetById(
-      'referenceWrap'
-    );
-
-  const qrSection =
-    safeGetById(
-      'qrphSection'
-    );
-
-  const paymentBadge =
-    safeGetById(
-      'paymentBadge'
-    );
-
-  const paymentQR =
-    safeGetById(
-      'paymentQRImage'
-    );
-
-  if (
-    paymentMethod === 'cash'
-  ) {
-
-    tenderedWrap.style.display =
-      'block';
-
-    referenceWrap.style.display =
-      'none';
-
-    qrSection.style.display =
-      'none';
-
-  }
-
-  else {
-
-    tenderedWrap.style.display =
-      'none';
-
-    referenceWrap.style.display =
-      'block';
-
-    qrSection.style.display =
-      'block';
-
-  }
-
-  if (
-    paymentMethod === 'gcash'
-  ) {
-
-    paymentBadge.textContent =
-      'GCASH PAYMENT';
-
-    paymentQR.src =
-      safeGetById(
-        'gcashQR'
-      )?.src;
-
-  }
-
-  if (
-    paymentMethod === 'maya'
-  ) {
-
-    paymentBadge.textContent =
-      'MAYA PAYMENT';
-
-    paymentQR.src =
-      safeGetById(
-        'mayaQR'
-      )?.src;
-
-  }
-
-  if (
-    paymentMethod === 'bank'
-  ) {
-
-    paymentBadge.textContent =
-      'BANK TRANSFER';
-
-    paymentQR.src =
-      safeGetById(
-        'rcbcQR'
-      )?.src;
-
-  }
-
-  if (
-    paymentMethod === 'qrph'
-  ) {
-
-    paymentBadge.textContent =
-      'QR PH PAYMENT';
-
-    paymentQR.src =
-      safeGetById(
-        'rcbcQR'
-      )?.src;
-
-  }
-
-}
-
-function completeSale(
-  status = 'completed'
-) {
-
-  const cart =
+  let cart =
     getCart();
 
-  if (!cart.length) {
+  const item =
+    cart.find(
 
-    return;
+      item =>
 
-  }
-
-  const paymentMethod =
-    safeGetById(
-      'checkoutPayment'
-    )?.value;
-
-  const tendered =
-    Number(
-      safeGetById(
-        'checkoutTendered'
-      )?.value || 0
+        String(item.id)
+        ===
+        String(id)
     );
 
-  const total =
-    calculateCartTotal();
+  if (!item) return;
 
-  if (
-    paymentMethod === 'cash'
-  ) {
+  item.quantity -= 1;
 
-    if (tendered < total) {
-
-      showNotification(
-        'Insufficient cash',
-        'error'
-      );
-
-      return;
-
-    }
-
-  }
-
-  const subtotal =
-    calculateCartSubtotal();
-
-  const tax =
-    calculateCartTax(
-      subtotal
+  cart =
+    cart.filter(
+      item => item.quantity > 0
     );
 
-  let discount = 0;
-
-  const discountValue =
-    Number(
-      safeGetById(
-        'discountValue'
-      )?.value || 0
-    );
-
-  const discountType =
-    safeGetById(
-      'discountType'
-    )?.value || 'percent';
-
-  if (discountValue > 0) {
-
-    if (
-      discountType ===
-      'percent'
-    ) {
-
-      discount =
-        subtotal *
-
-        (
-          discountValue / 100
-        );
-
-    }
-
-    else {
-
-      discount =
-        discountValue;
-
-    }
-
-  }
-
-  const sales =
-    getSales();
-
-  sales.push({
-
-    id:
-      generateId(),
-
-    receiptNumber:
-
-      'RCPT-' +
-
-      Date.now(),
-
-    items:
-      [...cart],
-
-    subtotal,
-
-    tax,
-
-    discount,
-
-    total,
-
-    paymentMethod,
-
-    tendered,
-
-    change:
-
-      paymentMethod === 'cash'
-
-        ? tendered - total
-
-        : 0,
-
-    customer:
-
-      safeGetById(
-        'checkoutCustomer'
-      )?.value || '',
-
-    paymentReference:
-
-      safeGetById(
-        'paymentReference'
-      )?.value || '',
-
-    status,
-
-    createdAt:
-      new Date()
-        .toISOString()
-
-  });
-
-  updateState(
-    'sales',
-    () => sales
-  );
-
-  deductProductInventory(
-    cart
-  );
-
-  deductIngredients(
-    cart
-  );
-
-  setCart([]);
-
-  closeModal(
-    'checkoutModal'
-  );
-
-  renderProductsTable();
-
-  renderPOSProducts();
-
-  renderIngredientsTable();
-
-  refreshDashboard();
-
-  renderHeldOrders();
-
-  showNotification(
-
-    status === 'pending'
-
-      ? 'Sale marked pending'
-
-      : 'Payment successful',
-
-    'success'
-  );
-
-}
-
-function initializeSalesEventListeners() {
-
-  safeGetById(
-    'clearCartBtn'
-  )?.addEventListener(
-    'click',
-    clearCart
-  );
-
-  safeGetById(
-    'checkoutBtn'
-  )?.addEventListener(
-    'click',
-    checkout
-  );
-
-  safeGetById(
-    'holdOrderBtn'
-  )?.addEventListener(
-    'click',
-    holdCurrentOrder
-  );
-
-  safeGetById(
-    'applyDiscountBtn'
-  )?.addEventListener(
-    'click',
-    updateCartSummary
-  );
+  setCart(cart);
 
 }
 
@@ -1302,10 +250,6 @@ document.addEventListener(
   () => {
 
     renderCart();
-
-    renderHeldOrders();
-
-    initializeSalesEventListeners();
 
   }
 
