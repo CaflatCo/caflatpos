@@ -35,3 +35,155 @@ function calculateTax(amount) {
   );
 
 }
+
+function saveToStorage(
+  key,
+  value
+) {
+
+  localStorage.setItem(
+
+    key,
+
+    JSON.stringify(value)
+
+  );
+
+}
+
+function loadFromStorage(
+  key
+) {
+
+  try {
+
+    const data =
+
+      localStorage.getItem(
+        key
+      );
+
+    return data
+
+      ? JSON.parse(data)
+
+      : null;
+
+  }
+
+  catch(error) {
+
+    console.error(error);
+
+    return null;
+
+  }
+
+}
+
+function removeFromStorage(
+  key
+) {
+
+  localStorage.removeItem(
+    key
+  );
+
+}
+
+function safeGetById(id) {
+
+  return document.getElementById(
+    id
+  );
+
+}
+
+function safeQuery(selector) {
+
+  return document.querySelector(
+    selector
+  );
+
+}
+
+function safeQueryAll(selector) {
+
+  return document.querySelectorAll(
+    selector
+  );
+
+}
+
+function generateId() {
+
+  return (
+
+    Date.now().toString(36) +
+
+    Math.random()
+      .toString(36)
+      .substring(2, 9)
+
+  );
+
+}
+
+function deepClone(data) {
+
+  return JSON.parse(
+    JSON.stringify(data)
+  );
+
+}
+
+function debounce(
+  func,
+  delay = 300
+) {
+
+  let timeout;
+
+  return function(...args) {
+
+    clearTimeout(timeout);
+
+    timeout = setTimeout(
+      () => func.apply(this, args),
+      delay
+    );
+
+  };
+
+}
+
+function throttle(
+  func,
+  limit = 300
+) {
+
+  let waiting = false;
+
+  return function(...args) {
+
+    if (!waiting) {
+
+      func.apply(this, args);
+
+      waiting = true;
+
+      setTimeout(
+        () => waiting = false,
+        limit
+      );
+
+    }
+
+  };
+
+}
+
+function capitalize(text) {
+
+  return String(text || '')
+    .charAt(
