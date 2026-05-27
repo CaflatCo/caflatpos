@@ -1,243 +1,76 @@
-window.editingIngredientId = null;
+function getCategoryList() {
 
-function resetIngredientForm() {
+  const stored =
 
-  safeGetById(
-    'ingredientId'
-  ).value = '';
+    Array.isArray(
+      APP_STATE.categories
+    )
 
-  safeGetById(
-    'ingredientName'
-  ).value = '';
+      ? APP_STATE.categories
 
-  safeGetById(
-    'ingredientPurchaseUnit'
-  ).value = 'g';
+      : [];
 
-  safeGetById(
-    'ingredientPackageQty'
-  ).value = '';
+  const fromProducts =
 
-  safeGetById(
-    'ingredientPurchaseCost'
-  ).value = '';
+    (APP_STATE.products || [])
 
-  safeGetById(
-    'ingredientStock'
-  ).value = '';
+      .map(product =>
 
-  safeGetById(
-    'ingredientReorder'
-  ).value = '';
+        String(
+          product.category || ''
+        ).trim()
 
-}
+      )
 
-function saveIngredient() {
+      .filter(Boolean);
 
-  const ingredient =
+  return [
 
-    normalizeIngredient({
+    ...new Set([
 
-      id:
-        editingIngredientId ||
+      ...stored,
+      ...fromProducts
 
-        generateId(),
+    ])
 
-      name:
-        safeGetById(
-          'ingredientName'
-        )?.value || '',
-
-      unit:
-        safeGetById(
-          'ingredientPurchaseUnit'
-        )?.value || 'g',
-
-      packageQty:
-        Number(
-          safeGetById(
-            'ingredientPackageQty'
-          )?.value || 0
-        ),
-
-      packageCost:
-        Number(
-          safeGetById(
-            'ingredientPurchaseCost'
-          )?.value || 0
-        ),
-
-      stock:
-        Number(
-          safeGetById(
-            'ingredientStock'
-          )?.value || 0
-        ),
-
-      reorderLevel:
-        Number(
-          safeGetById(
-            'ingredientReorder'
-          )?.value || 0
-        )
-
-    });
-
-  let ingredients =
-    getIngredients();
-
-  if (editingIngredientId) {
-
-    ingredients =
-      ingredients.map(item =>
-
-        String(item.id) ===
-        String(editingIngredientId)
-
-          ? ingredient
-
-          : item
-
-      );
-
-  }
-
-  else {
-
-    ingredients.push(
-      ingredient
-    );
-
-  }
-
-  setIngredients(
-    ingredients
-  );
-
-  editingIngredientId =
-    null;
-
-  resetIngredientForm();
-
-  renderIngredientsTable();
-
-  renderIngredientDropdowns();
-
-  closeModal(
-    'ingredientModal'
-  );
-
-  showNotification(
-    'Ingredient saved',
-    'success'
-  );
-
-}
-
-function editIngredient(id) {
-
-  const ingredient =
-    getIngredientById(id);
-
-  if (!ingredient) {
-
-    return;
-
-  }
-
-  editingIngredientId =
-    ingredient.id;
-
-  safeGetById(
-    'ingredientName'
-  ).value =
-    ingredient.name;
-
-  safeGetById(
-    'ingredientPurchaseUnit'
-  ).value =
-    ingredient.unit;
-
-  safeGetById(
-    'ingredientPackageQty'
-  ).value =
-    ingredient.packageQty;
-
-  safeGetById(
-    'ingredientPurchaseCost'
-  ).value =
-    ingredient.packageCost;
-
-  safeGetById(
-    'ingredientStock'
-  ).value =
-    ingredient.stock;
-
-  safeGetById(
-    'ingredientReorder'
-  ).value =
-    ingredient.reorderLevel;
-
-  openModal(
-    'ingredientModal'
-  );
-
-}
-
-function addCategory() {
-
-  const input =
-    safeGetById(
-      'newCategory'
-    );
-
-  if (!input) return;
-
-  const name =
-    input.value.trim();
-
-  if (!name) {
-
-    return;
-
-  }
-
-  const categories =
-    APP_STATE.categories || [];
-
-  categories.push(name);
-
-  updateState(
-    'categories',
-    () => categories
-  );
-
-  renderCategories();
-
-  renderCategoryOptions();
-
-  input.value = '';
-
-  showNotification(
-    'Category added',
-    'success'
-  );
+  ];
 
 }
 
 function renderCategories() {
 
   const list =
-    safeGetById(
+    document.getElementById(
       'categoryList'
     );
 
   if (!list) return;
 
   const categories =
-    APP_STATE.categories || [];
+
+    Array.isArray(
+      APP_STATE.categories
+    )
+
+      ? APP_STATE.categories
+
+      : [];
 
   list.innerHTML = '';
+
+  if (!categories.length) {
+
+    list.innerHTML = `
+
+      <div class="empty-state">
+        No categories yet
+      </div>
+
+    `;
+
+    return;
+
+  }
 
   categories.forEach(category => {
 
@@ -246,40 +79,25 @@ function renderCategories() {
         'div'
       );
 
-    item.style.marginBottom =
-      '10px';
+    item.className =
+      'settings-row';
 
     item.innerHTML = `
 
-      <div style="
-        display:flex;
-        justify-content:space-between;
-        align-items:center;
-        border:1px solid #000;
-        padding:12px;
-        border-radius:10px;
-        background:#fff;
-      ">
+      <span>${category}</span>
 
-        <span>
-          ${category}
-        </span>
+      <button
+        class="btn btn-sm"
+        type="button"
+        onclick="deleteCategory('${category}')">
 
-        <button
-          class="btn btn-sm"
-          onclick="deleteCategory('${category}')">
+        Delete
 
-          Delete
-
-        </button>
-
-      </div>
+      </button>
 
     `;
 
-    list.appendChild(
-      item
-    );
+    list.appendChild(item);
 
   });
 
@@ -289,10 +107,12 @@ function deleteCategory(name) {
 
   const updated =
 
-    APP_STATE.categories.filter(
-      category =>
+    (
+      APP_STATE.categories || []
+    ).filter(category =>
 
-        category !== name
+      category !== name
+
     );
 
   updateState(
@@ -304,31 +124,35 @@ function deleteCategory(name) {
 
   renderCategoryOptions();
 
-  showNotification(
-    'Category deleted',
-    'success'
-  );
-
 }
 
 function renderCategoryOptions() {
 
-  const select =
-    safeGetById(
+  const categories =
+    getCategoryList();
+
+  const productSelect =
+    document.getElementById(
       'productCategory'
     );
 
-  const filter =
-    safeGetById(
+  const filterSelect =
+    document.getElementById(
       'productCategoryFilter'
     );
 
-  const categories =
-    APP_STATE.categories || [];
+  if (productSelect) {
 
-  if (select) {
+    const current =
+      productSelect.value;
 
-    select.innerHTML = '';
+    productSelect.innerHTML = `
+
+      <option value="">
+        Select category
+      </option>
+
+    `;
 
     categories.forEach(category => {
 
@@ -343,18 +167,35 @@ function renderCategoryOptions() {
       option.textContent =
         category;
 
-      select.appendChild(
+      productSelect.appendChild(
         option
       );
 
     });
+
+    if (
+      categories.includes(current)
+    ) {
+
+      productSelect.value =
+        current;
+
+    }
 
   }
 
-  if (filter) {
+  if (filterSelect) {
 
-    filter.innerHTML =
-      '<option value="">All Categories</option>';
+    const current =
+      filterSelect.value;
+
+    filterSelect.innerHTML = `
+
+      <option value="">
+        All Categories
+      </option>
+
+    `;
 
     categories.forEach(category => {
 
@@ -369,79 +210,135 @@ function renderCategoryOptions() {
       option.textContent =
         category;
 
-      filter.appendChild(
+      filterSelect.appendChild(
         option
       );
 
     });
+
+    if (
+      categories.includes(current)
+    ) {
+
+      filterSelect.value =
+        current;
+
+    }
 
   }
 
 }
 
-function addRecipeRow() {
+function addRecipeRow(data = {}) {
 
   const builder =
-    safeGetById(
+    document.getElementById(
       'recipeBuilder'
     );
 
   if (!builder) return;
 
-  const ingredients =
-    getIngredients();
-
-  const options =
-    ingredients.map(
-
-      ingredient =>
-
-        `
-
-        <option value="${ingredient.id}">
-
-          ${ingredient.name}
-          (${ingredient.unit})
-
-        </option>
-
-        `
-
-    ).join('');
-
-  const card =
+  const row =
     document.createElement(
       'div'
     );
 
-  card.className =
-    'recipe-row';
+  row.className =
+    'recipe-row form-row';
 
-  card.style = `
-    border:1px solid #000;
-    padding:16px;
-    border-radius:12px;
-    margin-bottom:14px;
-    background:#fff;
-  `;
+  row.style.marginBottom =
+    '12px';
 
-  card.innerHTML = `
+  const ingredients =
 
-    <div style="
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      margin-bottom:14px;
-    ">
+    Array.isArray(
+      APP_STATE.ingredients
+    )
 
-      <strong>
-        Recipe Ingredient
-      </strong>
+      ? APP_STATE.ingredients
+
+      : [];
+
+  const optionsHtml =
+
+    ingredients.length
+
+      ? ingredients.map(
+          ingredient => `
+
+            <option
+              value="${ingredient.id}"
+
+              ${
+                String(
+                  data.ingredientId || ''
+                )
+                ===
+                String(ingredient.id)
+
+                  ? 'selected'
+
+                  : ''
+              }>
+
+              ${ingredient.name || '-'}
+              (${ingredient.unit || 'g'})
+
+            </option>
+
+          `
+        ).join('')
+
+      : `
+          <option value="">
+            No ingredients available
+          </option>
+        `;
+
+  row.innerHTML = `
+
+    <div class="form-group">
+
+      <label>
+        Ingredient
+      </label>
+
+      <select class="recipe-ingredient">
+
+        <option value="">
+          Select ingredient
+        </option>
+
+        ${optionsHtml}
+
+      </select>
+
+    </div>
+
+    <div class="form-group">
+
+      <label>
+        Quantity
+      </label>
+
+      <input
+        type="number"
+        class="recipe-qty"
+        placeholder="Quantity"
+        min="0"
+        step="0.01"
+        value="${data.quantity || 0}"
+      />
+
+    </div>
+
+    <div class="form-group">
+
+      <label>&nbsp;</label>
 
       <button
         type="button"
-        class="btn btn-sm"
-        onclick="this.closest('.recipe-row').remove()">
+        class="btn btn-secondary remove-recipe-btn">
 
         Remove
 
@@ -449,58 +346,21 @@ function addRecipeRow() {
 
     </div>
 
-    <div style="
-      display:grid;
-      grid-template-columns:2fr 1fr;
-      gap:12px;
-    ">
-
-      <div>
-
-        <label>
-          Ingredient
-        </label>
-
-        <select
-          class="recipe-ingredient"
-        >
-
-          ${options}
-
-        </select>
-
-      </div>
-
-      <div>
-
-        <label>
-          Quantity Used
-        </label>
-
-        <input
-          type="number"
-          class="recipe-qty"
-          placeholder="0"
-          min="0"
-          step="0.01"
-        />
-
-      </div>
-
-    </div>
-
   `;
 
-  builder.appendChild(
-    card
+  row.querySelector(
+    '.remove-recipe-btn'
+  ).addEventListener(
+    'click',
+    () => row.remove()
   );
+
+  builder.appendChild(row);
 
 }
 
 document.addEventListener(
-
   'DOMContentLoaded',
-
   () => {
 
     renderCategories();
@@ -508,5 +368,19 @@ document.addEventListener(
     renderCategoryOptions();
 
   }
-
 );
+
+window.getCategoryList =
+  getCategoryList;
+
+window.renderCategories =
+  renderCategories;
+
+window.renderCategoryOptions =
+  renderCategoryOptions;
+
+window.deleteCategory =
+  deleteCategory;
+
+window.addRecipeRow =
+  addRecipeRow;
