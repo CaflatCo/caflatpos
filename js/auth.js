@@ -21,17 +21,17 @@ const AUTH_USERS = {
 function applyAuth(role) {
 
   const loginScreen =
-    safeGetById(
+    document.getElementById(
       'loginScreen'
     );
 
   const roleBadge =
-    safeGetById(
+    document.getElementById(
       'roleBadge'
     );
 
   const app =
-    safeGetById(
+    document.getElementById(
       'app'
     );
 
@@ -42,15 +42,6 @@ function applyAuth(role) {
   if (loginScreen) {
 
     loginScreen.style.display =
-      'none';
-
-    loginScreen.style.visibility =
-      'hidden';
-
-    loginScreen.style.opacity =
-      '0';
-
-    loginScreen.style.pointerEvents =
       'none';
 
   }
@@ -67,19 +58,7 @@ function applyAuth(role) {
     app.style.flexDirection =
       'column';
 
-    app.style.visibility =
-      'visible';
-
-    app.style.opacity =
-      '1';
-
-    app.style.pointerEvents =
-      'auto';
-
   }
-
-  document.body.style.overflow =
-    'auto';
 
   if (roleBadge) {
 
@@ -88,74 +67,71 @@ function applyAuth(role) {
 
   }
 
+  switchView('pos');
+
 }
 
 async function login() {
 
-  const usernameInput =
-    safeGetById(
-      'loginUsername'
-    );
+  const username =
+    document
+      .getElementById(
+        'loginUsername'
+      )
+      .value
+      .trim();
 
-  const passwordInput =
-    safeGetById(
-      'loginPassword'
-    );
+  const password =
+    document
+      .getElementById(
+        'loginPassword'
+      )
+      .value;
+
+  const user =
+    AUTH_USERS[username];
 
   if (
-    !usernameInput ||
-    !passwordInput
+    !user ||
+    user.password !== password
   ) {
+
+    alert(
+      'Invalid username or password'
+    );
 
     return;
 
   }
 
-  const username =
-    usernameInput.value.trim();
+  localStorage.setItem(
 
-  const password =
-    passwordInput.value;
+    'caflat_auth',
 
-  const result =
-    await executeCommand(
+    JSON.stringify({
 
-      'login',
+      username,
 
-      {
+      role:
+        user.role
 
-        username,
+    })
 
-        password
+  );
 
-      }
-
-    );
-
-  if (!result) {
-
-    logError(
-      'Login failed'
-    );
-
-  }
+  applyAuth(
+    user.role
+  );
 
 }
 
-async function logout() {
+function logout() {
 
-  const result =
-    await executeCommand(
-      'logout'
-    );
+  localStorage.removeItem(
+    'caflat_auth'
+  );
 
-  if (!result) {
-
-    logError(
-      'Logout failed'
-    );
-
-  }
+  location.reload();
 
 }
 
@@ -165,19 +141,14 @@ function initializeAuth() {
     'login-active'
   );
 
-  const loginBtn =
-    safeGetById(
-      'loginBtn'
+  const app =
+    document.getElementById(
+      'app'
     );
 
   const loginScreen =
-    safeGetById(
+    document.getElementById(
       'loginScreen'
-    );
-
-  const app =
-    safeGetById(
-      'app'
     );
 
   if (app) {
@@ -196,23 +167,17 @@ function initializeAuth() {
     loginScreen.style.display =
       'flex';
 
-    loginScreen.style.visibility =
-      'visible';
-
-    loginScreen.style.opacity =
-      '1';
-
-    loginScreen.style.pointerEvents =
-      'auto';
-
   }
+
+  const loginBtn =
+    document.getElementById(
+      'loginBtn'
+    );
 
   if (loginBtn) {
 
-    loginBtn.addEventListener(
-      'click',
-      login
-    );
+    loginBtn.onclick =
+      login;
 
   }
 
@@ -223,173 +188,5 @@ document.addEventListener(
   'DOMContentLoaded',
 
   initializeAuth
-
-);
-
-registerCommand(
-
-  'login',
-
-  async payload => {
-
-    return await runTransaction(
-
-      'login',
-
-      async () => {
-
-        const {
-          username,
-          password
-        } = payload;
-
-        const user =
-          AUTH_USERS[username];
-
-        if (
-          !user ||
-          user.password !== password
-        ) {
-
-          showNotification(
-
-            'Invalid username or password',
-
-            'error'
-
-          );
-
-          createAuditEntry(
-
-            'login_failed',
-
-            {
-
-              username
-
-            }
-
-          );
-
-          return false;
-
-        }
-
-        saveToStorage(
-
-          'caflat_auth',
-
-          {
-
-            username,
-
-            role:
-              user.role
-
-          }
-
-        );
-
-        updateState(
-
-          'currentUserRole',
-
-          () => user.role
-
-        );
-
-        createAuditEntry(
-
-          'login_success',
-
-          {
-
-            username,
-
-            role:
-              user.role
-
-          }
-
-        );
-
-        applyAuth(
-          user.role
-        );
-
-        emitEvent(
-
-          'userLoggedIn',
-
-          {
-
-            username,
-
-            role:
-              user.role
-
-          }
-
-        );
-
-        showNotification(
-
-          'Login successful',
-
-          'success'
-
-        );
-
-        return true;
-
-      }
-
-    );
-
-  }
-
-);
-
-registerCommand(
-
-  'logout',
-
-  async () => {
-
-    return await runTransaction(
-
-      'logout',
-
-      async () => {
-
-        removeFromStorage(
-          'caflat_auth'
-        );
-
-        createAuditEntry(
-          'logout'
-        );
-
-        emitEvent(
-          'userLoggedOut'
-        );
-
-        showNotification(
-
-          'Logged out successfully',
-
-          'info'
-
-        );
-
-        location.reload();
-
-        return true;
-
-      }
-
-    );
-
-  }
 
 );
