@@ -344,6 +344,10 @@ registerCommand(
           }
         );
 
+        /* =========================
+           PRODUCT INVENTORY
+        ========================= */
+
         updateState(
           'inventory',
 
@@ -381,6 +385,97 @@ registerCommand(
 
               }
             );
+
+          }
+        );
+
+        /* =========================
+           INGREDIENT DEDUCTION
+        ========================= */
+
+        updateState(
+          'ingredients',
+
+          currentIngredients => {
+
+            const updatedIngredients =
+              [...currentIngredients];
+
+            cart.forEach(cartItem => {
+
+              if (
+                !cartItem.recipe ||
+                !Array.isArray(
+                  cartItem.recipe
+                )
+              ) return;
+
+              cartItem.recipe.forEach(
+                recipeItem => {
+
+                  const ingredientIndex =
+                    updatedIngredients.findIndex(
+                      ingredient =>
+                        ingredient.id ===
+                        recipeItem.ingredientId
+                    );
+
+                  if (
+                    ingredientIndex === -1
+                  ) return;
+
+                  const ingredient =
+                    updatedIngredients[
+                      ingredientIndex
+                    ];
+
+                  let deductionQty =
+
+                    Number(
+                      recipeItem.quantity || 0
+                    ) *
+
+                    Number(
+                      cartItem.quantity || 0
+                    );
+
+                  /* batch recipe support */
+
+                  if (
+                    cartItem.recipeMode ===
+                    'batch'
+                  ) {
+
+                    const batchYield =
+                      Number(
+                        cartItem.batchYield || 1
+                      );
+
+                    deductionQty =
+                      deductionQty /
+                      batchYield;
+
+                  }
+
+                  updatedIngredients[
+                    ingredientIndex
+                  ] = {
+
+                    ...ingredient,
+
+                    stock:
+                      Number(
+                        ingredient.stock || 0
+                      ) - deductionQty
+
+                  };
+
+                }
+              );
+
+            });
+
+            return updatedIngredients;
 
           }
         );
