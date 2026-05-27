@@ -1,49 +1,102 @@
-const APP_STATE = {
+const STORAGE_KEY =
+  'caflatcopos_v1';
+
+const DEFAULT_STATE = {
 
   products: [],
+
   ingredients: [],
-  inventory: [],
+
   sales: [],
-  categories: [],
-  heldOrders: [],
+
   cart: [],
 
+  heldOrders: [],
+
+  categories: [],
+
   settings: {
-    brandName: 'Caflat.Co POS',
+
+    brandName:
+      'Caflat.Co POS',
+
     currency: '₱',
+
     taxRate: 0,
-    receiptFooter: 'Thank you for your purchase!'
+
+    receiptFooter:
+      'Thank you for your purchase!'
+
   }
 
 };
 
-function saveState() {
-
-  localStorage.setItem(
-    'caflat_pos_state',
-    JSON.stringify(APP_STATE)
-  );
-
-}
+let APP_STATE =
+  loadState();
 
 function loadState() {
 
-  const savedState = localStorage.getItem(
-    'caflat_pos_state'
-  );
-
-  if (!savedState) return;
-
   try {
 
-    const parsedState = JSON.parse(savedState);
+    const raw =
+      localStorage.getItem(
+        STORAGE_KEY
+      );
 
-    Object.assign(APP_STATE, parsedState);
+    if (!raw) {
+
+      return structuredClone(
+        DEFAULT_STATE
+      );
+
+    }
+
+    const parsed =
+      JSON.parse(raw);
+
+    return {
+
+      ...structuredClone(
+        DEFAULT_STATE
+      ),
+
+      ...parsed
+
+    };
 
   } catch (error) {
 
     console.error(
-      'Failed to load application state:',
+      'Failed to load state',
+      error
+    );
+
+    return structuredClone(
+      DEFAULT_STATE
+    );
+
+  }
+
+}
+
+function saveState() {
+
+  try {
+
+    localStorage.setItem(
+
+      STORAGE_KEY,
+
+      JSON.stringify(
+        APP_STATE
+      )
+
+    );
+
+  } catch (error) {
+
+    console.error(
+      'Failed to save state',
       error
     );
 
@@ -51,68 +104,49 @@ function loadState() {
 
 }
 
-function resetState() {
+function updateState(
+  key,
+  updater
+) {
 
-  localStorage.removeItem(
-    'caflat_pos_state'
-  );
-
-  location.reload();
-
-}
-
-document.addEventListener(
-  'DOMContentLoaded',
-  loadState
-);
-function updateState(key, updater) {
-
-  if (!(key in APP_STATE)) {
-
-    console.warn(
-      `Invalid state key: ${key}`
-    );
+  if (
+    typeof updater !==
+    'function'
+  ) {
 
     return;
 
   }
 
-  try {
+  const current =
+    APP_STATE[key];
 
-    const currentValue =
-      APP_STATE[key];
+  APP_STATE[key] =
+    updater(current);
 
-    const updatedValue =
-      updater(currentValue);
-
-    APP_STATE[key] =
-      updatedValue;
-
-    saveState();
-
-  } catch (error) {
-
-    console.error(
-      `State update failed (${key}):`,
-      error
-    );
-
-  }
+  saveState();
 
 }
 
-function getState(key) {
+function resetState() {
 
-  if (!(key in APP_STATE)) {
-
-    console.warn(
-      `Invalid state access: ${key}`
+  APP_STATE =
+    structuredClone(
+      DEFAULT_STATE
     );
 
-    return null;
-
-  }
-
-  return APP_STATE[key];
+  saveState();
 
 }
+
+window.APP_STATE =
+  APP_STATE;
+
+window.updateState =
+  updateState;
+
+window.saveState =
+  saveState;
+
+window.resetState =
+  resetState;
