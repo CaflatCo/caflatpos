@@ -7,7 +7,9 @@ function getIngredients() {
 
 }
 
-function setIngredients(ingredients) {
+function setIngredients(
+  ingredients
+) {
 
   updateState(
     'ingredients',
@@ -61,7 +63,9 @@ function resetIngredientForm() {
       document.getElementById(id);
 
     if (el) {
+
       el.value = '';
+
     }
 
   });
@@ -72,7 +76,9 @@ function resetIngredientForm() {
     );
 
   if (unit) {
+
     unit.value = 'g';
+
   }
 
   editingIngredientId =
@@ -180,7 +186,7 @@ function renderIngredientsTable() {
 
         <td
           colspan="8"
-          class="empty-state">
+          class="empty-state centered-empty-state">
 
           No ingredients found
 
