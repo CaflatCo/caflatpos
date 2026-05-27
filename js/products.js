@@ -11,8 +11,17 @@ class Product {
     this.name =
       data.name || '';
 
+    this.description =
+      data.description || '';
+
     this.category =
       data.category || '';
+
+    this.image =
+      data.image || '';
+
+    this.type =
+      data.type || 'standard';
 
     this.cost =
       Number(data.cost || 0);
@@ -23,11 +32,41 @@ class Product {
     this.stock =
       Number(data.stock || 0);
 
+    this.lowStockThreshold =
+      Number(data.lowStockThreshold || 5);
+
     this.margin =
       Number(data.margin || 0);
 
+    this.batchYield =
+      Number(data.batchYield || 1);
+
+    this.recipeMode =
+      data.recipeMode || 'per-item';
+
     this.recipe =
-      data.recipe || [];
+      Array.isArray(data.recipe)
+
+        ? data.recipe
+
+        : [];
+
+    this.variants =
+      Array.isArray(data.variants)
+
+        ? data.variants
+
+        : [];
+
+    this.createdAt =
+      data.createdAt ||
+
+      new Date().toISOString();
+
+    this.updatedAt =
+      data.updatedAt ||
+
+      new Date().toISOString();
 
   }
 
@@ -35,6 +74,9 @@ class Product {
 
 window.Product =
   Product;
+
+window.editingProductId =
+  null;
 
 function getProducts() {
 
@@ -51,6 +93,303 @@ function setProducts(products) {
 
 }
 
+function normalizeProduct(data = {}) {
+
+  return new Product(data);
+
+}
+
+function calculateMargin(cost, price) {
+
+  if (price <= 0) {
+
+    return 0;
+
+  }
+
+  return Number(
+
+    (
+      (
+        (price - cost) /
+        price
+      ) * 100
+    ).toFixed(2)
+
+  );
+
+}
+
+function collectRecipeItems() {
+
+  const rows =
+    document.querySelectorAll(
+      '#recipeBuilder .recipe-row'
+    );
+
+  return [...rows]
+
+    .map(row => {
+
+      return {
+
+        ingredientId:
+          row.querySelector(
+            '.recipe-ingredient'
+          )?.value || '',
+
+        quantity:
+          Number(
+            row.querySelector(
+              '.recipe-qty'
+            )?.value || 0
+          )
+
+      };
+
+    })
+
+    .filter(item =>
+      item.ingredientId
+    );
+
+}
+
+function collectVariants() {
+
+  const rows =
+    document.querySelectorAll(
+      '.variant-row'
+    );
+
+  return [...rows]
+
+    .map(row => {
+
+      return {
+
+        name:
+          row.querySelector(
+            '.variant-name'
+          )?.value || '',
+
+        price:
+          Number(
+            row.querySelector(
+              '.variant-price'
+            )?.value || 0
+          )
+
+      };
+
+    })
+
+    .filter(variant =>
+      variant.name
+    );
+
+}
+
+function saveProduct() {
+
+  const cost =
+    Number(
+      safeGetById(
+        'productCost'
+      )?.value || 0
+    );
+
+  const price =
+    Number(
+      safeGetById(
+        'productPrice'
+      )?.value || 0
+    );
+
+  const product =
+
+    normalizeProduct({
+
+      id:
+        editingProductId ||
+
+        generateId(),
+
+      sku:
+        safeGetById(
+          'productSKU'
+        )?.value,
+
+      name:
+        safeGetById(
+          'productNameInput'
+        )?.value,
+
+      description:
+        safeGetById(
+          'productDescription'
+        )?.value,
+
+      category:
+        safeGetById(
+          'productCategory'
+        )?.value,
+
+      type:
+        safeGetById(
+          'productType'
+        )?.value ||
+
+        'standard',
+
+      cost,
+
+      price,
+
+      stock:
+        Number(
+          safeGetById(
+            'productStock'
+          )?.value || 0
+        ),
+
+      lowStockThreshold:
+        Number(
+          safeGetById(
+            'productLowStock'
+          )?.value || 5
+        ),
+
+      margin:
+        calculateMargin(
+          cost,
+          price
+        ),
+
+      batchYield:
+        Number(
+          safeGetById(
+            'batchYield'
+          )?.value || 1
+        ),
+
+      recipeMode:
+        safeGetById(
+          'recipeMode'
+        )?.value ||
+
+        'per-item',
+
+      recipe:
+        collectRecipeItems(),
+
+      variants:
+        collectVariants(),
+
+      updatedAt:
+        new Date().toISOString()
+
+    });
+
+  let products =
+    getProducts();
+
+  if (editingProductId) {
+
+    products =
+      products.map(item =>
+
+        String(item.id) ===
+        String(editingProductId)
+
+          ? product
+
+          : item
+
+      );
+
+  }
+
+  else {
+
+    products.push(product);
+
+  }
+
+  setProducts(products);
+
+  editingProductId =
+    null;
+
+  renderProductsTable();
+
+  renderPOSProducts();
+
+  closeModal(
+    'productModal'
+  );
+
+  resetProductForm();
+
+  showNotification(
+    'Product saved',
+    'success'
+  );
+
+}
+
+function resetProductForm() {
+
+  const fields = [
+
+    'productSKU',
+    'productNameInput',
+    'productDescription',
+    'productCost',
+    'productPrice',
+    'productStock',
+    'productLowStock',
+    'batchYield'
+
+  ];
+
+  fields.forEach(id => {
+
+    const field =
+      safeGetById(id);
+
+    if (field) {
+
+      field.value = '';
+
+    }
+
+  });
+
+  const recipeBuilder =
+    safeGetById(
+      'recipeBuilder'
+    );
+
+  if (recipeBuilder) {
+
+    recipeBuilder.innerHTML = '';
+
+  }
+
+  const variants =
+    safeGetById(
+      'variantBuilder'
+    );
+
+  if (variants) {
+
+    variants.innerHTML = '';
+
+  }
+
+}
+
 function renderProductsTable() {
 
   const tableBody =
@@ -60,19 +399,25 @@ function renderProductsTable() {
 
   if (!tableBody) return;
 
+  tableBody.innerHTML = '';
+
   const products =
     getProducts();
-
-  tableBody.innerHTML = '';
 
   if (!products.length) {
 
     tableBody.innerHTML = `
+
       <tr>
+
         <td colspan="8">
+
           No products found
+
         </td>
+
       </tr>
+
     `;
 
     return;
@@ -94,9 +439,9 @@ function renderProductsTable() {
 
       <td>${product.category}</td>
 
-      <td>${product.cost}</td>
+      <td>${formatCurrency(product.cost)}</td>
 
-      <td>${product.price}</td>
+      <td>${formatCurrency(product.price)}</td>
 
       <td>${product.margin}%</td>
 
@@ -124,132 +469,58 @@ function renderProductsTable() {
 
     `;
 
-    tableBody.appendChild(
-      row
-    );
+    tableBody.appendChild(row);
 
   });
 
 }
 
-function collectRecipeItems() {
+function renderPOSProducts() {
 
-  const rows =
-    document.querySelectorAll(
-      '#recipeBuilder .recipe-row'
+  const container =
+    safeGetById(
+      'posProducts'
     );
 
-  return [...rows].map(row => {
+  if (!container) return;
 
-    return {
+  container.innerHTML = '';
 
-      ingredientId:
-        row.querySelector(
-          '.recipe-ingredient'
-        )?.value || '',
+  getProducts().forEach(product => {
 
-      quantity:
-        Number(
-          row.querySelector(
-            '.recipe-qty'
-          )?.value || 0
-        )
+    const card =
+      document.createElement(
+        'button'
+      );
+
+    card.className =
+      'pos-product-card';
+
+    card.innerHTML = `
+
+      <div class="pos-product-name">
+
+        ${product.name}
+
+      </div>
+
+      <div class="pos-product-price">
+
+        ${formatCurrency(product.price)}
+
+      </div>
+
+    `;
+
+    card.onclick = () => {
+
+      addToCart(product.id);
 
     };
 
+    container.appendChild(card);
+
   });
-
-}
-
-function saveProduct() {
-
-  const cost =
-    Number(
-      safeGetById(
-        'productCost'
-      )?.value || 0
-    );
-
-  const price =
-    Number(
-      safeGetById(
-        'productPrice'
-      )?.value || 0
-    );
-
-  const margin =
-
-    price > 0
-
-      ? (
-
-          (
-            (price - cost) /
-            price
-          ) * 100
-
-        ).toFixed(2)
-
-      : 0;
-
-  const product =
-
-    new Product({
-
-      sku:
-        safeGetById(
-          'productSKU'
-        )?.value,
-
-      name:
-        safeGetById(
-          'productNameInput'
-        )?.value,
-
-      category:
-        safeGetById(
-          'productCategory'
-        )?.value,
-
-      cost,
-
-      price,
-
-      stock:
-        Number(
-          safeGetById(
-            'productStock'
-          )?.value || 0
-        ),
-
-      margin,
-
-      recipe:
-        collectRecipeItems()
-
-    });
-
-  const products =
-    getProducts();
-
-  products.push(
-    product
-  );
-
-  setProducts(
-    products
-  );
-
-  renderProductsTable();
-
-  closeModal(
-    'productModal'
-  );
-
-  showNotification(
-    'Product saved',
-    'success'
-  );
 
 }
 
@@ -262,11 +533,10 @@ function editProduct(id) {
         String(id)
     );
 
-  if (!product) {
+  if (!product) return;
 
-    return;
-
-  }
+  editingProductId =
+    product.id;
 
   safeGetById(
     'productSKU'
@@ -277,6 +547,11 @@ function editProduct(id) {
     'productNameInput'
   ).value =
     product.name;
+
+  safeGetById(
+    'productDescription'
+  ).value =
+    product.description;
 
   safeGetById(
     'productCategory'
@@ -298,7 +573,15 @@ function editProduct(id) {
   ).value =
     product.stock;
 
-  deleteProduct(id);
+  safeGetById(
+    'productLowStock'
+  ).value =
+    product.lowStockThreshold;
+
+  safeGetById(
+    'batchYield'
+  ).value =
+    product.batchYield;
 
   openModal(
     'productModal'
@@ -308,23 +591,25 @@ function editProduct(id) {
 
 function deleteProduct(id) {
 
-  const products =
+  const updated =
 
     getProducts().filter(
       product =>
 
-        String(
-          product.id
-        ) !==
-
+        String(product.id) !==
         String(id)
     );
 
-  setProducts(
-    products
-  );
+  setProducts(updated);
 
   renderProductsTable();
+
+  renderPOSProducts();
+
+  showNotification(
+    'Product deleted',
+    'success'
+  );
 
 }
 
@@ -332,6 +617,12 @@ document.addEventListener(
 
   'DOMContentLoaded',
 
-  renderProductsTable
+  () => {
+
+    renderProductsTable();
+
+    renderPOSProducts();
+
+  }
 
 );
