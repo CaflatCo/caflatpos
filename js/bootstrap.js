@@ -14,72 +14,29 @@ function bootstrapApplication() {
       'loginScreen'
     );
 
-  const authData =
-    loadFromStorage(
-      'caflat_auth'
+  if (app) {
+
+    app.style.display =
+      'none';
+
+    app.classList.remove(
+      'authenticated'
     );
-
-  if (!authData) {
-
-    if (app) {
-
-      app.style.display =
-        'none';
-
-    }
-
-    if (loginScreen) {
-
-      loginScreen.style.display =
-        'flex';
-
-      loginScreen.style.visibility =
-        'visible';
-
-      loginScreen.style.opacity =
-        '1';
-
-      loginScreen.style.pointerEvents =
-        'auto';
-
-    }
-
-    logInfo(
-      'Authentication required'
-    );
-
-    return;
 
   }
 
   if (loginScreen) {
 
     loginScreen.style.display =
-      'none';
+      'flex';
 
     loginScreen.style.visibility =
-      'hidden';
-
-    loginScreen.style.opacity =
-      '0';
-
-    loginScreen.style.pointerEvents =
-      'none';
-
-  }
-
-  if (app) {
-
-    app.style.display =
-      'block';
-
-    app.style.visibility =
       'visible';
 
-    app.style.opacity =
+    loginScreen.style.opacity =
       '1';
 
-    app.style.pointerEvents =
+    loginScreen.style.pointerEvents =
       'auto';
 
   }
