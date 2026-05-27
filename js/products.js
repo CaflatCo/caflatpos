@@ -20,8 +20,8 @@ function setProducts(products) {
 function renderProductsTable() {
 
   const tableBody =
-    safeGetById(
-      'productsTableBody'
+    document.querySelector(
+      '#productsTable tbody'
     );
 
   if (!tableBody) return;
@@ -31,7 +31,45 @@ function renderProductsTable() {
   const products =
     getProducts();
 
+  if (!products.length) {
+
+    tableBody.innerHTML = `
+
+      <tr>
+
+        <td colspan="8">
+
+          No products found
+
+        </td>
+
+      </tr>
+
+    `;
+
+    return;
+
+  }
+
   products.forEach(product => {
+
+    const margin =
+      product.price > 0
+
+        ? Math.round(
+            (
+              (
+                product.price -
+                product.cost
+              )
+
+              /
+
+              product.price
+            ) * 100
+          )
+
+        : 0;
 
     const row =
       document.createElement(
@@ -40,19 +78,27 @@ function renderProductsTable() {
 
     row.innerHTML = `
 
-      <td>${product.sku}</td>
+      <td>${product.sku || '-'}</td>
 
       <td>${product.name}</td>
 
-      <td>${product.category}</td>
+      <td>${product.category || '-'}</td>
 
-      <td>${formatCurrency(product.cost)}</td>
+      <td>
+        ${formatCurrency(product.cost || 0)}
+      </td>
 
-      <td>${formatCurrency(product.price)}</td>
+      <td>
+        ${formatCurrency(product.price || 0)}
+      </td>
 
-      <td>${product.margin}%</td>
+      <td>
+        ${margin}%
+      </td>
 
-      <td>${product.stock}</td>
+      <td>
+        ${product.stock || 0}
+      </td>
 
       <td>
 
@@ -80,7 +126,9 @@ function renderProductsTable() {
 
     `;
 
-    tableBody.appendChild(row);
+    tableBody.appendChild(
+      row
+    );
 
   });
 
@@ -88,17 +136,33 @@ function renderProductsTable() {
 
 function renderPOSProducts() {
 
-  const container =
-    safeGetById(
-      'posProducts'
+  const grid =
+    document.getElementById(
+      'productGrid'
     );
 
-  if (!container) return;
+  if (!grid) return;
 
-  container.innerHTML = '';
+  grid.innerHTML = '';
 
   const products =
     getProducts();
+
+  if (!products.length) {
+
+    grid.innerHTML = `
+
+      <div class="empty-state">
+
+        No products available
+
+      </div>
+
+    `;
+
+    return;
+
+  }
 
   products.forEach(product => {
 
@@ -108,19 +172,43 @@ function renderPOSProducts() {
       );
 
     card.className =
-      `pos-product-card ${
-        Number(product.stock || 0) <= 0
-          ? 'out-of-stock'
-          : ''
-      }`;
+      'pos-product-card';
+
+    if (
+      Number(product.stock || 0)
+      <= 0
+    ) {
+
+      card.classList.add(
+        'out-of-stock'
+      );
+
+    }
+
+    if (
+      Number(product.stock || 0)
+      <=
+      Number(
+        product.reorderLevel || 5
+      )
+    ) {
+
+      card.classList.add(
+        'low-stock'
+      );
+
+    }
 
     card.onclick = () => {
 
       if (
-        Number(product.stock || 0) <= 0
+        Number(product.stock || 0)
+        <= 0
       ) return;
 
-      addToCart(product.id);
+      addToCart(
+        product.id
+      );
 
     };
 
@@ -130,33 +218,13 @@ function renderPOSProducts() {
 
         <div class="pos-category-badge">
 
-          ${product.category}
+          ${product.category || 'General'}
 
         </div>
 
-        ${
-          Number(product.stock || 0) <=
-          Number(product.lowStockLevel || 5)
-
-            ? `
-              <div class="pos-low-stock-pill">
-
-                LOW STOCK
-
-              </div>
-            `
-
-            : ''
-        }
-
       </div>
 
-      <div
-        class="pos-product-body"
-        style="
-          text-align:center;
-          align-items:center;
-        ">
+      <div class="pos-product-body">
 
         <div class="pos-product-name">
 
@@ -164,33 +232,19 @@ function renderPOSProducts() {
 
         </div>
 
-        ${
-          product.description
-
-            ? `
-              <div class="pos-product-description">
-
-                ${product.description}
-
-              </div>
-            `
-
-            : ''
-        }
-
       </div>
 
       <div class="pos-product-footer">
 
         <div class="pos-product-price">
 
-          ${formatCurrency(product.price)}
+          ${formatCurrency(product.price || 0)}
 
         </div>
 
         <div class="pos-product-stock">
 
-          ${product.stock} LEFT
+          ${product.stock || 0} LEFT
 
         </div>
 
@@ -198,46 +252,100 @@ function renderPOSProducts() {
 
     `;
 
-    container.appendChild(card);
+    grid.appendChild(card);
 
   });
 
 }
 
-function saveProduct(data) {
+function saveProduct() {
 
   const products =
     getProducts();
 
-  if (data.id) {
+  const productId =
+    document.getElementById(
+      'productId'
+    )?.value;
 
-    const index =
-      products.findIndex(
+  const product = {
 
-        item =>
+    id:
+      productId ||
+      generateId(),
 
-          String(item.id) ===
-          String(data.id)
-      );
+    sku:
+      document.getElementById(
+        'productSKU'
+      )?.value || '',
 
-    if (index !== -1) {
+    name:
+      document.getElementById(
+        'productNameInput'
+      )?.value || '',
 
-      products[index] = data;
+    category:
+      document.getElementById(
+        'productCategory'
+      )?.value || '',
 
-    }
+    cost:
+      Number(
+        document.getElementById(
+          'productCost'
+        )?.value || 0
+      ),
+
+    price:
+      Number(
+        document.getElementById(
+          'productPrice'
+        )?.value || 0
+      ),
+
+    stock:
+      Number(
+        document.getElementById(
+          'productStock'
+        )?.value || 0
+      ),
+
+    reorderLevel:
+      Number(
+        document.getElementById(
+          'productReorder'
+        )?.value || 0
+      ),
+
+    description:
+      document.getElementById(
+        'productDescription'
+      )?.value || ''
+
+  };
+
+  const existingIndex =
+    products.findIndex(
+
+      item =>
+
+        String(item.id)
+        ===
+        String(product.id)
+    );
+
+  if (existingIndex !== -1) {
+
+    products[existingIndex] =
+      product;
 
   }
 
   else {
 
-    products.push({
-
-      ...data,
-
-      id:
-        generateId()
-
-    });
+    products.push(
+      product
+    );
 
   }
 
@@ -261,41 +369,54 @@ function editProduct(id) {
 
       item =>
 
-        String(item.id) ===
+        String(item.id)
+        ===
         String(id)
     );
 
   if (!product) return;
 
-  safeGetById(
+  document.getElementById(
     'productId'
-  ).value = product.id;
+  ).value =
+    product.id;
 
-  safeGetById(
-    'productName'
-  ).value = product.name;
-
-  safeGetById(
+  document.getElementById(
     'productSKU'
-  ).value = product.sku;
+  ).value =
+    product.sku || '';
 
-  safeGetById(
+  document.getElementById(
+    'productNameInput'
+  ).value =
+    product.name || '';
+
+  document.getElementById(
     'productCategory'
-  ).value = product.category;
+  ).value =
+    product.category || '';
 
-  safeGetById(
-    'productPrice'
-  ).value = product.price;
-
-  safeGetById(
+  document.getElementById(
     'productCost'
-  ).value = product.cost;
+  ).value =
+    product.cost || 0;
 
-  safeGetById(
+  document.getElementById(
+    'productPrice'
+  ).value =
+    product.price || 0;
+
+  document.getElementById(
     'productStock'
-  ).value = product.stock;
+  ).value =
+    product.stock || 0;
 
-  safeGetById(
+  document.getElementById(
+    'productReorder'
+  ).value =
+    product.reorderLevel || 0;
+
+  document.getElementById(
     'productDescription'
   ).value =
     product.description || '';
@@ -320,7 +441,8 @@ function deleteProduct(id) {
 
       item =>
 
-        String(item.id) !==
+        String(item.id)
+        !==
         String(id)
     );
 
