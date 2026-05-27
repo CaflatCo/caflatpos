@@ -1,21 +1,36 @@
 function getProducts() {
+
   return APP_STATE.products || [];
+
 }
 
 function setProducts(products) {
-  updateState('products', () => products);
+
+  updateState(
+    'products',
+    () => products
+  );
 
   renderProductsTable();
+
   renderPOSProducts();
 
-  if (typeof renderCategoryOptions === 'function') {
+  if (
+    typeof renderCategoryOptions
+    ===
+    'function'
+  ) {
+
     renderCategoryOptions();
+
   }
+
 }
 
 function resetProductForm() {
 
   const fields = [
+
     'productId',
     'productSKU',
     'productNameInput',
@@ -27,6 +42,7 @@ function resetProductForm() {
     'productDescription',
     'productType',
     'batchYield'
+
   ];
 
   fields.forEach(id => {
@@ -36,7 +52,9 @@ function resetProductForm() {
 
     if (!el) return;
 
-    if (el.tagName === 'SELECT') {
+    if (
+      el.tagName === 'SELECT'
+    ) {
 
       el.selectedIndex = 0;
 
@@ -54,7 +72,9 @@ function resetProductForm() {
     );
 
   if (recipeBuilder) {
+
     recipeBuilder.innerHTML = '';
+
   }
 
   const variantBuilder =
@@ -63,7 +83,9 @@ function resetProductForm() {
     );
 
   if (variantBuilder) {
+
     variantBuilder.innerHTML = '';
+
   }
 
   const batchYieldWrap =
@@ -72,7 +94,10 @@ function resetProductForm() {
     );
 
   if (batchYieldWrap) {
-    batchYieldWrap.style.display = 'none';
+
+    batchYieldWrap.style.display =
+      'none';
+
   }
 
   const recipeMode =
@@ -81,7 +106,9 @@ function resetProductForm() {
     );
 
   if (recipeMode) {
+
     recipeMode.value = 'unit';
+
   }
 
   const batchYield =
@@ -90,7 +117,9 @@ function resetProductForm() {
     );
 
   if (batchYield) {
+
     batchYield.value = 1;
+
   }
 
 }
@@ -104,7 +133,10 @@ function ensureCategory(category) {
   if (!name) return;
 
   const categories =
-    Array.isArray(APP_STATE.categories)
+
+    Array.isArray(
+      APP_STATE.categories
+    )
 
       ? [...APP_STATE.categories]
 
@@ -129,15 +161,18 @@ function getVisibleProducts() {
     getProducts();
 
   const search =
+
     (
       document.getElementById(
         'productSearch'
       )?.value || ''
     )
+
       .trim()
       .toLowerCase();
 
   const categoryFilter =
+
     document.getElementById(
       'productCategoryFilter'
     )?.value || '';
@@ -197,9 +232,15 @@ function renderProductsTable() {
     tableBody.innerHTML = `
 
       <tr>
-        <td colspan="8" class="empty-state">
+
+        <td
+          colspan="8"
+          class="empty-state centered-empty-state">
+
           No products found
+
         </td>
+
       </tr>
 
     `;
@@ -222,7 +263,9 @@ function renderProductsTable() {
 
         ? Math.round(
             (
-              (price - cost)
+              (
+                price - cost
+              )
               /
               price
             ) * 100
@@ -234,32 +277,54 @@ function renderProductsTable() {
       Number(product.stock || 0);
 
     const reorderLevel =
-      Number(product.reorderLevel || 0);
+      Number(
+        product.reorderLevel || 0
+      );
 
     const row =
-      document.createElement('tr');
+      document.createElement(
+        'tr'
+      );
 
-    if (stock <= reorderLevel) {
+    if (
+      stock <= reorderLevel
+    ) {
+
       row.classList.add(
         'low-stock-row'
       );
+
     }
 
     row.innerHTML = `
 
-      <td>${product.sku || '-'}</td>
+      <td>
+        ${product.sku || '-'}
+      </td>
 
-      <td>${product.name || '-'}</td>
+      <td>
+        ${product.name || '-'}
+      </td>
 
-      <td>${product.category || '-'}</td>
+      <td>
+        ${product.category || '-'}
+      </td>
 
-      <td>${formatCurrency(cost)}</td>
+      <td>
+        ${formatCurrency(cost)}
+      </td>
 
-      <td>${formatCurrency(price)}</td>
+      <td>
+        ${formatCurrency(price)}
+      </td>
 
-      <td>${margin}%</td>
+      <td>
+        ${margin}%
+      </td>
 
-      <td>${stock}</td>
+      <td>
+        ${stock}
+      </td>
 
       <td>
 
@@ -365,7 +430,8 @@ function collectVariants() {
 
       variants.push({
 
-        id: generateId(),
+        id:
+          generateId(),
 
         name:
           name.trim(),
@@ -382,7 +448,9 @@ function collectVariants() {
 
 }
 
-function openVariantSelector(product) {
+function openVariantSelector(
+  product
+) {
 
   const modal =
     document.getElementById(
@@ -394,12 +462,15 @@ function openVariantSelector(product) {
       'variantOptions'
     );
 
-  if (!modal || !options) return;
+  if (!modal || !options)
+    return;
 
   options.innerHTML = '';
 
   if (
-    !Array.isArray(product.variants) ||
+    !Array.isArray(
+      product.variants
+    ) ||
     !product.variants.length
   ) {
 
@@ -407,51 +478,59 @@ function openVariantSelector(product) {
 
   }
 
-  product.variants.forEach(variant => {
+  product.variants.forEach(
+    variant => {
 
-    const button =
-      document.createElement(
-        'button'
+      const button =
+        document.createElement(
+          'button'
+        );
+
+      button.type = 'button';
+
+      button.className =
+        'variant-option';
+
+      button.innerHTML = `
+
+        <div class="variant-option-name">
+
+          ${variant.name}
+
+        </div>
+
+        <div class="variant-option-price">
+
+          ${formatCurrency(
+            Number(
+              variant.price || 0
+            )
+          )}
+
+        </div>
+
+      `;
+
+      button.addEventListener(
+        'click',
+        () => {
+
+          addToCart(
+            product.id,
+            variant
+          );
+
+          closeModal(
+            'variantModal'
+          );
+
+        }
       );
 
-    button.type = 'button';
+      options.appendChild(button);
 
-    button.className =
-      'variant-option';
-
-    button.innerHTML = `
-
-      <div class="variant-option-name">
-        ${variant.name}
-      </div>
-
-      <div class="variant-option-price">
-        ${formatCurrency(
-          Number(variant.price || 0)
-        )}
-      </div>
-
-    `;
-
-    button.addEventListener(
-      'click',
-      () => {
-
-        addToCart(
-          product.id,
-          variant
-        );
-
-        closeModal(
-          'variantModal'
-        );
-
-      }
-    );
-
-    options.appendChild(button);
-
-  });
+    }
+  );
 
   openModal(
     'variantModal'
@@ -477,8 +556,10 @@ function renderPOSProducts() {
 
     grid.innerHTML = `
 
-      <div class="empty-state">
+      <div class="empty-state centered-empty-state">
+
         No products available
+
       </div>
 
     `;
@@ -493,11 +574,18 @@ function renderPOSProducts() {
       Number(product.stock || 0);
 
     const reorderLevel =
-      Number(product.reorderLevel || 0);
+      Number(
+        product.reorderLevel || 0
+      );
 
     const hasVariants =
 
-      Array.isArray(product.variants) &&
+      Array.isArray(
+        product.variants
+      )
+
+      &&
+
       product.variants.length > 0;
 
     const card =
@@ -510,23 +598,30 @@ function renderPOSProducts() {
     card.className =
       'pos-product-card';
 
-    if (stock <= reorderLevel) {
+    if (
+      stock <= reorderLevel
+    ) {
+
       card.classList.add(
         'low-stock'
       );
+
     }
 
     if (stock <= 0) {
+
       card.classList.add(
         'out-of-stock'
       );
+
     }
 
     card.addEventListener(
       'click',
       () => {
 
-        if (stock <= 0) return;
+        if (stock <= 0)
+          return;
 
         addToCart(
           product.id
@@ -545,18 +640,6 @@ function renderPOSProducts() {
 
         </div>
 
-        ${
-          stock <= reorderLevel
-
-            ? `
-              <div class="pos-low-stock-pill">
-                LOW
-              </div>
-            `
-
-            : ''
-        }
-
       </div>
 
       <div class="pos-product-body">
@@ -574,7 +657,9 @@ function renderPOSProducts() {
         <div class="pos-product-price">
 
           ${formatCurrency(
-            Number(product.price || 0)
+            Number(
+              product.price || 0
+            )
           )}
 
         </div>
@@ -591,6 +676,7 @@ function renderPOSProducts() {
         hasVariants
 
           ? `
+
             <div class="product-card-actions">
 
               <button
@@ -602,6 +688,7 @@ function renderPOSProducts() {
               </button>
 
             </div>
+
           `
 
           : ''
@@ -867,20 +954,21 @@ function editProduct(id) {
 
     variantBuilder.innerHTML = '';
 
-    (product.variants || [])
-      .forEach(variant => {
+    (
+      product.variants || []
+    ).forEach(variant => {
 
-        addVariantRow({
+      addVariantRow({
 
-          label:
-            variant.name,
+        label:
+          variant.name,
 
-          price:
-            variant.price
-
-        });
+        price:
+          variant.price
 
       });
+
+    });
 
   }
 
@@ -893,12 +981,13 @@ function editProduct(id) {
 
     recipeBuilder.innerHTML = '';
 
-    (product.recipe || [])
-      .forEach(item => {
+    (
+      product.recipe || []
+    ).forEach(item => {
 
-        addRecipeRow(item);
+      addRecipeRow(item);
 
-      });
+    });
 
   }
 
@@ -952,6 +1041,7 @@ document.addEventListener(
   () => {
 
     renderProductsTable();
+
     renderPOSProducts();
 
   }
