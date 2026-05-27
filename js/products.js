@@ -1,13 +1,9 @@
-/* =========================
-   GLOBAL PRODUCT MODEL
-========================= */
-
 class Product {
 
   constructor(data = {}) {
 
     this.id =
-      data.id || Date.now();
+      data.id || generateId();
 
     this.sku =
       data.sku || '';
@@ -37,11 +33,8 @@ class Product {
 
 }
 
-window.Product = Product;
-
-/* =========================
-   PRODUCT STORAGE
-========================= */
+window.Product =
+  Product;
 
 function getProducts() {
 
@@ -58,19 +51,17 @@ function setProducts(products) {
 
 }
 
-/* =========================
-   PRODUCTS TABLE
-========================= */
-
 function renderProductsTable() {
 
-  const tableBody = safeQuery(
-    '#productsTable tbody'
-  );
+  const tableBody =
+    safeQuery(
+      '#productsTable tbody'
+    );
 
   if (!tableBody) return;
 
-  const products = getProducts();
+  const products =
+    getProducts();
 
   tableBody.innerHTML = '';
 
@@ -78,7 +69,7 @@ function renderProductsTable() {
 
     tableBody.innerHTML = `
       <tr>
-        <td colspan="8" class="empty-state">
+        <td colspan="8">
           No products found
         </td>
       </tr>
@@ -91,23 +82,25 @@ function renderProductsTable() {
   products.forEach(product => {
 
     const row =
-      document.createElement('tr');
+      document.createElement(
+        'tr'
+      );
 
     row.innerHTML = `
 
-      <td>${product.sku || '-'}</td>
+      <td>${product.sku}</td>
 
-      <td>${product.name || '-'}</td>
+      <td>${product.name}</td>
 
-      <td>${product.category || '-'}</td>
+      <td>${product.category}</td>
 
-      <td>${product.cost || 0}</td>
+      <td>${product.cost}</td>
 
-      <td>${product.price || 0}</td>
+      <td>${product.price}</td>
 
-      <td>${product.margin || 0}%</td>
+      <td>${product.margin}%</td>
 
-      <td>${product.stock || 0}</td>
+      <td>${product.stock}</td>
 
       <td>
 
@@ -131,31 +124,13 @@ function renderProductsTable() {
 
     `;
 
-    tableBody.appendChild(row);
+    tableBody.appendChild(
+      row
+    );
 
   });
 
 }
-
-/* =========================
-   PRODUCT MODAL
-========================= */
-
-function openProductModal() {
-
-  openModal('productModal');
-
-}
-
-function closeProductModal() {
-
-  closeModal('productModal');
-
-}
-
-/* =========================
-   RECIPE BUILDER
-========================= */
 
 function collectRecipeItems() {
 
@@ -186,315 +161,177 @@ function collectRecipeItems() {
 
 }
 
-/* =========================
-   SAVE PRODUCT
-========================= */
+function saveProduct() {
 
-async function saveProduct() {
-
-  try {
-
-    const name =
+  const cost =
+    Number(
       safeGetById(
-        'productNameInput'
-      )?.value?.trim();
-
-    const category =
-      safeGetById(
-        'productCategory'
-      )?.value?.trim();
-
-    const cost =
-      Number(
-        safeGetById(
-          'productCost'
-        )?.value || 0
-      );
-
-    const price =
-      Number(
-        safeGetById(
-          'productPrice'
-        )?.value || 0
-      );
-
-    const stock =
-      Number(
-        safeGetById(
-          'productStock'
-        )?.value || 0
-      );
-
-    const sku =
-      safeGetById(
-        'productSKU'
-      )?.value?.trim();
-
-    const margin =
-
-      price > 0
-
-        ? (
-
-            (
-              (price - cost) /
-              price
-            ) * 100
-
-          ).toFixed(2)
-
-        : 0;
-
-    const product =
-
-      new Product({
-
-        sku,
-
-        name,
-
-        category,
-
-        cost,
-
-        price,
-
-        stock,
-
-        margin,
-
-        recipe:
-          collectRecipeItems()
-
-      });
-
-    const result =
-
-      await executeCommand(
-
-        'createProduct',
-
-        {
-
-          product
-
-        }
-
-      );
-
-    if (!result) {
-
-      logError(
-        'Product creation failed'
-      );
-
-      return;
-
-    }
-
-    safeRender(
-
-      'products-table',
-
-      () => {
-
-        renderProductsTable();
-
-      }
-
+        'productCost'
+      )?.value || 0
     );
 
-    closeProductModal();
-
-  }
-
-  catch (error) {
-
-    console.error(error);
-
-    alert(
-      'Save product failed: ' +
-      error.message
+  const price =
+    Number(
+      safeGetById(
+        'productPrice'
+      )?.value || 0
     );
 
-  }
+  const margin =
 
-}
+    price > 0
 
-/* =========================
-   EDIT PRODUCT
-========================= */
+      ? (
 
-function editProduct(productId) {
+          (
+            (price - cost) /
+            price
+          ) * 100
 
-  console.log(
-    'Edit product:',
-    productId
+        ).toFixed(2)
+
+      : 0;
+
+  const product =
+
+    new Product({
+
+      sku:
+        safeGetById(
+          'productSKU'
+        )?.value,
+
+      name:
+        safeGetById(
+          'productNameInput'
+        )?.value,
+
+      category:
+        safeGetById(
+          'productCategory'
+        )?.value,
+
+      cost,
+
+      price,
+
+      stock:
+        Number(
+          safeGetById(
+            'productStock'
+          )?.value || 0
+        ),
+
+      margin,
+
+      recipe:
+        collectRecipeItems()
+
+    });
+
+  const products =
+    getProducts();
+
+  products.push(
+    product
   );
 
-}
-
-/* =========================
-   DELETE PRODUCT
-========================= */
-
-function deleteProduct(productId) {
-
-  const confirmed = confirm(
-    'Delete this product?'
+  setProducts(
+    products
   );
 
-  if (!confirmed) return;
+  renderProductsTable();
 
-  createAuditEntry(
-    'product_deleted',
-    {
-
-      productId
-
-    }
-  );
-
-  updateState(
-    'products',
-
-    currentProducts => {
-
-      return currentProducts.filter(
-        product =>
-          product.id !== productId
-      );
-
-    }
+  closeModal(
+    'productModal'
   );
 
   showNotification(
-    'Product deleted',
-    'info'
-  );
-
-  safeRender(
-    'products-table',
-
-    () => {
-
-      renderProductsTable();
-
-    }
+    'Product saved',
+    'success'
   );
 
 }
 
-/* =========================
-   EVENT LISTENERS
-========================= */
+function editProduct(id) {
 
-function initializeProductEventListeners() {
-
-  const recipeMode =
-    safeGetById('recipeMode');
-
-  if (recipeMode) {
-
-    recipeMode.addEventListener(
-      'change',
-      toggleRecipeMode
+  const product =
+    getProducts().find(
+      item =>
+        String(item.id) ===
+        String(id)
     );
 
+  if (!product) {
+
+    return;
+
   }
+
+  safeGetById(
+    'productSKU'
+  ).value =
+    product.sku;
+
+  safeGetById(
+    'productNameInput'
+  ).value =
+    product.name;
+
+  safeGetById(
+    'productCategory'
+  ).value =
+    product.category;
+
+  safeGetById(
+    'productCost'
+  ).value =
+    product.cost;
+
+  safeGetById(
+    'productPrice'
+  ).value =
+    product.price;
+
+  safeGetById(
+    'productStock'
+  ).value =
+    product.stock;
+
+  deleteProduct(id);
+
+  openModal(
+    'productModal'
+  );
 
 }
 
-/* =========================
-   COMMANDS
-========================= */
+function deleteProduct(id) {
 
-registerCommand(
+  const products =
 
-  'createProduct',
+    getProducts().filter(
+      product =>
 
-  async payload => {
+        String(
+          product.id
+        ) !==
 
-    return await runTransaction(
-
-      'create-product',
-
-      async () => {
-
-        const product =
-          payload.product;
-
-        createAuditEntry(
-
-          'product_created',
-
-          {
-
-            productName:
-              product.name
-
-          }
-
-        );
-
-        updateState(
-
-          'products',
-
-          currentProducts => {
-
-            return [
-
-              ...currentProducts,
-
-              product
-
-            ];
-
-          }
-
-        );
-
-        showNotification(
-
-          'Product created successfully',
-
-          'success'
-
-        );
-
-        emitEvent(
-
-          'productCreated',
-
-          product
-
-        );
-
-        return true;
-
-      }
-
+        String(id)
     );
 
-  }
+  setProducts(
+    products
+  );
 
-);
+  renderProductsTable();
 
-/* =========================
-   INIT
-========================= */
+}
 
 document.addEventListener(
 
   'DOMContentLoaded',
 
-  () => {
-
-    renderProductsTable();
-
-    initializeProductEventListeners();
-
-  }
+  renderProductsTable
 
 );
