@@ -31,26 +31,6 @@ function renderIngredientsTable() {
   const ingredients =
     getIngredients();
 
-  if (!ingredients.length) {
-
-    table.innerHTML = `
-
-      <tr>
-
-        <td colspan="8">
-
-          No ingredients found
-
-        </td>
-
-      </tr>
-
-    `;
-
-    return;
-
-  }
-
   ingredients.forEach(
     ingredient => {
 
@@ -66,75 +46,26 @@ function renderIngredientsTable() {
 
           : 0;
 
-      const isLowStock =
-
-        Number(
-          ingredient.stock || 0
-        )
-
-        <=
-
-        Number(
-          ingredient.reorderLevel || 0
-        );
-
       const row =
         document.createElement(
           'tr'
         );
 
-      row.className =
-        isLowStock
-          ? 'low-stock-row'
-          : '';
-
       row.innerHTML = `
 
-        <td>
+        <td>${ingredient.name}</td>
 
-          ${ingredient.name}
+        <td>${ingredient.unit}</td>
 
-        </td>
+        <td>${ingredient.packageQty}</td>
 
-        <td>
+        <td>${formatCurrency(ingredient.packageCost)}</td>
 
-          ${ingredient.unit}
+        <td>${formatCurrency(unitCost)}</td>
 
-        </td>
+        <td>${ingredient.stock}</td>
 
-        <td>
-
-          ${ingredient.packageQty}
-
-        </td>
-
-        <td>
-
-          ${formatCurrency(
-            ingredient.packageCost
-          )}
-
-        </td>
-
-        <td>
-
-          ${formatCurrency(
-            unitCost
-          )}/${ingredient.unit}
-
-        </td>
-
-        <td>
-
-          ${ingredient.stock}
-
-        </td>
-
-        <td>
-
-          ${ingredient.reorderLevel}
-
-        </td>
+        <td>${ingredient.reorderLevel}</td>
 
         <td>
 
@@ -162,47 +93,9 @@ function renderIngredientsTable() {
 
       `;
 
-      table.appendChild(
-        row
-      );
+      table.appendChild(row);
 
     }
-  );
-
-}
-
-function openIngredientModal() {
-
-  document.getElementById(
-    'ingredientId'
-  ).value = '';
-
-  document.getElementById(
-    'ingredientName'
-  ).value = '';
-
-  document.getElementById(
-    'ingredientPurchaseUnit'
-  ).value = 'g';
-
-  document.getElementById(
-    'ingredientPackageQty'
-  ).value = '';
-
-  document.getElementById(
-    'ingredientPurchaseCost'
-  ).value = '';
-
-  document.getElementById(
-    'ingredientStock'
-  ).value = '';
-
-  document.getElementById(
-    'ingredientReorder'
-  ).value = '';
-
-  openModal(
-    'ingredientModal'
   );
 
 }
@@ -377,9 +270,7 @@ function deleteIngredient(id) {
         String(id)
     );
 
-  setIngredients(
-    updated
-  );
+  setIngredients(updated);
 
   showNotification(
     'Ingredient deleted',
