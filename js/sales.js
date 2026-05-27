@@ -32,6 +32,20 @@ function addToCart(productId) {
 
   }
 
+  if (
+    Number(product.stock || 0)
+    <= 0
+  ) {
+
+    showNotification(
+      'Out of stock',
+      'error'
+    );
+
+    return;
+
+  }
+
   const cart =
     getCart();
 
@@ -45,6 +59,20 @@ function addToCart(productId) {
     );
 
   if (existing) {
+
+    if (
+      existing.quantity >=
+      product.stock
+    ) {
+
+      showNotification(
+        'Insufficient stock',
+        'error'
+      );
+
+      return;
+
+    }
 
     existing.quantity += 1;
 
@@ -87,7 +115,101 @@ function removeFromCart(productId) {
 
 }
 
+function increaseCartQty(
+  productId
+) {
+
+  const cart =
+    getCart();
+
+  const item =
+    cart.find(
+
+      item =>
+
+        String(item.id) ===
+        String(productId)
+    );
+
+  if (!item) return;
+
+  const product =
+    getProducts().find(
+
+      p =>
+
+        String(p.id) ===
+        String(productId)
+    );
+
+  if (!product) return;
+
+  if (
+    item.quantity >=
+    product.stock
+  ) {
+
+    showNotification(
+      'Insufficient stock',
+      'error'
+    );
+
+    return;
+
+  }
+
+  item.quantity += 1;
+
+  setCart(cart);
+
+}
+
+function decreaseCartQty(
+  productId
+) {
+
+  const cart =
+    getCart();
+
+  const item =
+    cart.find(
+
+      item =>
+
+        String(item.id) ===
+        String(productId)
+    );
+
+  if (!item) return;
+
+  item.quantity -= 1;
+
+  if (item.quantity <= 0) {
+
+    removeFromCart(
+      productId
+    );
+
+    return;
+
+  }
+
+  setCart(cart);
+
+}
+
 function clearCart() {
+
+  const confirmed =
+    confirm(
+      'Clear current order?'
+    );
+
+  if (!confirmed) {
+
+    return;
+
+  }
 
   setCart([]);
 
@@ -207,9 +329,25 @@ function renderCart() {
 
     container.innerHTML = `
 
-      <div class="empty-state">
+      <div class="empty-cart-state">
 
-        Cart is empty
+        <div class="empty-cart-icon">
+
+          🛒
+
+        </div>
+
+        <div class="empty-cart-title">
+
+          No items yet
+
+        </div>
+
+        <div class="empty-cart-subtitle">
+
+          Products added will appear here
+
+        </div>
 
       </div>
 
@@ -223,47 +361,89 @@ function renderCart() {
 
   cart.forEach(item => {
 
+    const total =
+
+      Number(item.price || 0)
+
+      *
+
+      Number(item.quantity || 0);
+
     const card =
       document.createElement(
         'div'
       );
 
     card.className =
-      'cart-item';
+      'cart-item-card';
 
     card.innerHTML = `
 
-      <div>
-
-        <strong>
-          ${item.name}
-        </strong>
+      <div class="cart-item-top">
 
         <div>
 
-          ${item.quantity}
+          <div class="cart-item-name">
 
-          ×
+            ${item.name}
 
-          ${formatCurrency(item.price)}
+          </div>
+
+          <div class="cart-item-price">
+
+            ${formatCurrency(item.price)}
+
+          </div>
+
+        </div>
+
+        <button
+          class="cart-remove-btn"
+          onclick="removeFromCart('${item.id}')">
+
+          ✕
+
+        </button>
+
+      </div>
+
+      <div class="cart-item-bottom">
+
+        <div class="qty-controls">
+
+          <button
+            onclick="decreaseCartQty('${item.id}')">
+
+            −
+
+          </button>
+
+          <span>
+
+            ${item.quantity}
+
+          </span>
+
+          <button
+            onclick="increaseCartQty('${item.id}')">
+
+            +
+
+          </button>
+
+        </div>
+
+        <div class="cart-item-total">
+
+          ${formatCurrency(total)}
 
         </div>
 
       </div>
 
-      <button
-        class="btn btn-sm"
-        onclick="removeFromCart('${item.id}')">
-
-        Remove
-
-      </button>
-
     `;
 
-    container.appendChild(
-      card
-    );
+    container.appendChild(card);
 
   });
 
@@ -468,7 +648,7 @@ function checkout() {
     cart
   );
 
-  clearCart();
+  setCart([]);
 
   renderProductsTable();
 
