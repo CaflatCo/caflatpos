@@ -46,37 +46,29 @@ class Product {
 
     this.recipe =
       Array.isArray(data.recipe)
-
         ? data.recipe
-
         : [];
 
     this.variants =
       Array.isArray(data.variants)
-
         ? data.variants
-
         : [];
 
     this.createdAt =
       data.createdAt ||
-
       new Date().toISOString();
 
     this.updatedAt =
       data.updatedAt ||
-
       new Date().toISOString();
 
   }
 
 }
 
-window.Product =
-  Product;
+window.Product = Product;
 
-window.editingProductId =
-  null;
+window.editingProductId = null;
 
 function getProducts() {
 
@@ -212,7 +204,6 @@ function saveProduct() {
 
       id:
         editingProductId ||
-
         generateId(),
 
       sku:
@@ -239,7 +230,6 @@ function saveProduct() {
         safeGetById(
           'productType'
         )?.value ||
-
         'standard',
 
       cost,
@@ -256,7 +246,7 @@ function saveProduct() {
       lowStockThreshold:
         Number(
           safeGetById(
-            'productLowStock'
+            'productReorder'
           )?.value || 5
         ),
 
@@ -277,7 +267,6 @@ function saveProduct() {
         safeGetById(
           'recipeMode'
         )?.value ||
-
         'per-item',
 
       recipe:
@@ -325,6 +314,8 @@ function saveProduct() {
 
   renderPOSProducts();
 
+  renderCategoryTabs();
+
   closeModal(
     'productModal'
   );
@@ -348,7 +339,7 @@ function resetProductForm() {
     'productCost',
     'productPrice',
     'productStock',
-    'productLowStock',
+    'productReorder',
     'batchYield'
 
   ];
@@ -409,13 +400,9 @@ function renderProductsTable() {
     tableBody.innerHTML = `
 
       <tr>
-
-        <td colspan="8">
-
+        <td colspan="9">
           No products found
-
         </td>
-
       </tr>
 
     `;
@@ -473,7 +460,11 @@ function renderProductsTable() {
               </span>
             `
 
-            : ''
+            : `
+              <span class="badge-ok">
+                OK
+              </span>
+            `
         }
 
       </td>
@@ -506,7 +497,9 @@ function renderProductsTable() {
 
 }
 
-function renderPOSProducts() {
+function renderPOSProducts(
+  category = 'All'
+) {
 
   const container =
     safeGetById(
@@ -517,8 +510,24 @@ function renderPOSProducts() {
 
   container.innerHTML = '';
 
-  const products =
+  let products =
     getProducts();
+
+  if (
+    category &&
+    category !== 'All'
+  ) {
+
+    products =
+      products.filter(
+
+        product =>
+
+          product.category ===
+          category
+      );
+
+  }
 
   if (!products.length) {
 
@@ -579,13 +588,9 @@ function renderPOSProducts() {
           isLowStock
 
             ? `
-
               <div class="pos-low-stock-pill">
-
                 Low Stock
-
               </div>
-
             `
 
             : ''
@@ -605,7 +610,6 @@ function renderPOSProducts() {
 
           ${
             product.description ||
-
             'Freshly prepared'
           }
 
@@ -644,6 +648,77 @@ function renderPOSProducts() {
     }
 
     container.appendChild(card);
+
+  });
+
+}
+
+function renderCategoryTabs() {
+
+  const container =
+    safeGetById(
+      'categoryTabs'
+    );
+
+  if (!container) return;
+
+  const categories = [
+
+    'All',
+
+    ...new Set(
+
+      getProducts().map(
+        product =>
+          product.category
+      )
+    )
+
+  ];
+
+  container.innerHTML = '';
+
+  categories.forEach(category => {
+
+    const button =
+      document.createElement(
+        'button'
+      );
+
+    button.textContent =
+      category;
+
+    button.className =
+      category === 'All'
+        ? 'active'
+        : '';
+
+    button.onclick = () => {
+
+      container
+        .querySelectorAll(
+          'button'
+        )
+        .forEach(btn =>
+
+          btn.classList.remove(
+            'active'
+          )
+        );
+
+      button.classList.add(
+        'active'
+      );
+
+      renderPOSProducts(
+        category
+      );
+
+    };
+
+    container.appendChild(
+      button
+    );
 
   });
 
@@ -699,7 +774,7 @@ function editProduct(id) {
     product.stock;
 
   safeGetById(
-    'productLowStock'
+    'productReorder'
   ).value =
     product.lowStockThreshold;
 
@@ -731,6 +806,8 @@ function deleteProduct(id) {
 
   renderPOSProducts();
 
+  renderCategoryTabs();
+
   showNotification(
     'Product deleted',
     'success'
@@ -747,6 +824,8 @@ document.addEventListener(
     renderProductsTable();
 
     renderPOSProducts();
+
+    renderCategoryTabs();
 
   }
 
