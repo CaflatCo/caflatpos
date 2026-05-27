@@ -733,6 +733,17 @@
 
 <script>
 
+const UNIT_CONVERSIONS =
+  window.UNITS
+    ? UNITS.CONVERSIONS
+    : {
+        g:1,
+        kg:1000,
+        ml:1,
+        l:1000
+      };
+
+
 window.db =
   loadDatabaseSafely()
   || window.db;
@@ -3184,7 +3195,11 @@ function openModal(id){
 function normalizeIngredientData(ingredient){
 
   const unitInfo =
-    UNIT_CONVERSIONS[ingredient.purchaseUnit]
+    UNITS.CONVERSIONS[
+  String(
+    ingredient.purchaseUnit || ''
+  ).toLowerCase()
+]
     || { base: ingredient.purchaseUnit, multiplier: 1 };
 
   ingredient.baseUnit =
