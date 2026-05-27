@@ -35,6 +35,10 @@ function applyAuth(role) {
       'app'
     );
 
+  document.body.classList.remove(
+    'login-active'
+  );
+
   if (loginScreen) {
 
     loginScreen.style.display =
@@ -53,8 +57,15 @@ function applyAuth(role) {
 
   if (app) {
 
+    app.classList.add(
+      'authenticated'
+    );
+
     app.style.display =
-      'block';
+      'flex';
+
+    app.style.flexDirection =
+      'column';
 
     app.style.visibility =
       'visible';
@@ -150,6 +161,10 @@ async function logout() {
 
 function initializeAuth() {
 
+  document.body.classList.add(
+    'login-active'
+  );
+
   const loginBtn =
     safeGetById(
       'loginBtn'
@@ -166,6 +181,10 @@ function initializeAuth() {
     );
 
   if (app) {
+
+    app.classList.remove(
+      'authenticated'
+    );
 
     app.style.display =
       'none';
