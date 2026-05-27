@@ -1,7 +1,5 @@
 window.openIngredientModal = function() {
 
-  resetIngredientForm?.();
-
   openModal(
     'ingredientModal'
   );
@@ -18,7 +16,41 @@ window.openInventoryModal = function() {
 
 window.openProductModal = function() {
 
-  resetProductForm?.();
+  document.getElementById(
+    'productId'
+  ).value = '';
+
+  document.getElementById(
+    'productSKU'
+  ).value = '';
+
+  document.getElementById(
+    'productNameInput'
+  ).value = '';
+
+  document.getElementById(
+    'productCategory'
+  ).value = '';
+
+  document.getElementById(
+    'productCost'
+  ).value = '';
+
+  document.getElementById(
+    'productPrice'
+  ).value = '';
+
+  document.getElementById(
+    'productStock'
+  ).value = '';
+
+  document.getElementById(
+    'productReorder'
+  ).value = '';
+
+  document.getElementById(
+    'productDescription'
+  ).value = '';
 
   openModal(
     'productModal'
@@ -43,45 +75,11 @@ window.addVariantRow = function() {
   card.className =
     'variant-card';
 
-  card.style = `
-    border:1px solid #000;
-    padding:16px;
-    margin-bottom:14px;
-    border-radius:12px;
-    background:#fff;
-  `;
-
   card.innerHTML = `
 
-    <div style="
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      margin-bottom:14px;
-    ">
+    <div class="form-row">
 
-      <strong>
-        Variant
-      </strong>
-
-      <button
-        type="button"
-        class="btn btn-sm"
-        onclick="this.closest('.variant-card').remove()">
-
-        Remove
-
-      </button>
-
-    </div>
-
-    <div style="
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:12px;
-    ">
-
-      <div>
+      <div class="form-group">
 
         <label>
           Variant Name
@@ -90,12 +88,12 @@ window.addVariantRow = function() {
         <input
           type="text"
           class="variant-name"
-          placeholder="e.g. Box of 6"
+          placeholder="e.g Box of 6"
         />
 
       </div>
 
-      <div>
+      <div class="form-group">
 
         <label>
           Price
@@ -104,7 +102,6 @@ window.addVariantRow = function() {
         <input
           type="number"
           class="variant-price"
-          placeholder="0.00"
           min="0"
           step="0.01"
         />
@@ -115,35 +112,27 @@ window.addVariantRow = function() {
 
   `;
 
-  builder.appendChild(card);
+  builder.appendChild(
+    card
+  );
 
 };
 
-window.exportSalesCSV = function() {
+window.renderBranding = function() {
 
-  const sales =
-    APP_STATE.sales || [];
+  const brand =
+    document.getElementById(
+      'brandName'
+    );
 
-  let csv =
-    'Date,Total\n';
+  if (!brand) return;
 
-  sales.forEach(sale => {
+  brand.textContent =
 
-    csv +=
-      `${sale.createdAt},${sale.total}\n`;
+    APP_STATE.settings
+      ?.brandName ||
 
-  });
-
-  downloadFile(
-    'sales.csv',
-    csv,
-    'text/csv'
-  );
-
-  showNotification(
-    'Sales exported',
-    'success'
-  );
+    'Caflat.Co POS';
 
 };
 
@@ -189,29 +178,14 @@ window.saveSettings = function() {
 
 };
 
-window.renderBranding = function() {
-
-  const brand =
-    safeGetById(
-      'brandName'
-    );
-
-  if (!brand) return;
-
-  brand.textContent =
-
-    APP_STATE.settings
-      ?.brandName ||
-
-    'Caflat.Co POS';
-
-};
-
 window.loadDemoData = function() {
 
   const demoProducts = [
 
-    new Product({
+    {
+
+      id:
+        generateId(),
 
       sku: 'CK-001',
 
@@ -225,11 +199,14 @@ window.loadDemoData = function() {
 
       stock: 24,
 
-      lowStockThreshold: 5
+      reorderLevel: 5
 
-    }),
+    },
 
-    new Product({
+    {
+
+      id:
+        generateId(),
 
       sku: 'CK-002',
 
@@ -243,9 +220,9 @@ window.loadDemoData = function() {
 
       stock: 12,
 
-      lowStockThreshold: 5
+      reorderLevel: 5
 
-    })
+    }
 
   ];
 
