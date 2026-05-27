@@ -1,5 +1,7 @@
 window.openIngredientModal = function() {
 
+  resetIngredientForm?.();
+
   openModal(
     'ingredientModal'
   );
@@ -16,6 +18,8 @@ window.openInventoryModal = function() {
 
 window.openProductModal = function() {
 
+  resetProductForm?.();
+
   openModal(
     'productModal'
   );
@@ -31,68 +35,87 @@ window.addVariantRow = function() {
 
   if (!builder) return;
 
-  const row =
+  const card =
     document.createElement(
       'div'
     );
 
-  row.className =
-    'form-row';
+  card.className =
+    'variant-card';
 
-  row.innerHTML = `
+  card.style = `
+    border:1px solid #000;
+    padding:16px;
+    margin-bottom:14px;
+    border-radius:12px;
+    background:#fff;
+  `;
 
-    <input
-      type="text"
-      placeholder="Variant Name"
-      class="variant-name"
-    />
+  card.innerHTML = `
 
-    <input
-      type="number"
-      placeholder="Price"
-      class="variant-price"
-    />
+    <div style="
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:14px;
+    ">
+
+      <strong>
+        Variant
+      </strong>
+
+      <button
+        type="button"
+        class="btn btn-sm"
+        onclick="this.closest('.variant-card').remove()">
+
+        Remove
+
+      </button>
+
+    </div>
+
+    <div style="
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+    ">
+
+      <div>
+
+        <label>
+          Variant Name
+        </label>
+
+        <input
+          type="text"
+          class="variant-name"
+          placeholder="e.g. Box of 6"
+        />
+
+      </div>
+
+      <div>
+
+        <label>
+          Price
+        </label>
+
+        <input
+          type="number"
+          class="variant-price"
+          placeholder="0.00"
+          min="0"
+          step="0.01"
+        />
+
+      </div>
+
+    </div>
 
   `;
 
-  builder.appendChild(row);
-
-};
-
-window.addRecipeRow = function() {
-
-  const builder =
-    document.getElementById(
-      'recipeBuilder'
-    );
-
-  if (!builder) return;
-
-  const row =
-    document.createElement(
-      'div'
-    );
-
-  row.className =
-    'recipe-row form-row';
-
-  row.innerHTML = `
-
-    <input
-      type="text"
-      placeholder="Ingredient ID"
-      class="recipe-ingredient"
-    />
-
-    <input
-      type="number"
-      placeholder="Quantity"
-      class="recipe-qty"
-    />
-
-  `;
-
-  builder.appendChild(row);
+  builder.appendChild(card);
 
 };
 
@@ -112,13 +135,14 @@ window.exportSalesCSV = function() {
   });
 
   downloadFile(
-
     'sales.csv',
-
     csv,
-
     'text/csv'
+  );
 
+  showNotification(
+    'Sales exported',
+    'success'
   );
 
 };
@@ -138,9 +162,11 @@ window.saveSettings = function() {
       )?.value || '₱',
 
     taxRate:
-      document.getElementById(
-        'setTaxRate'
-      )?.value || 0,
+      Number(
+        document.getElementById(
+          'setTaxRate'
+        )?.value || 0
+      ),
 
     receiptFooter:
       document.getElementById(
@@ -149,45 +175,90 @@ window.saveSettings = function() {
 
   };
 
-  APP_STATE.settings =
-    settings;
-
-  localStorage.setItem(
-
-    'caflat_settings',
-
-    JSON.stringify(settings)
-
+  updateState(
+    'settings',
+    () => settings
   );
 
-  alert(
-    'Settings saved'
+  renderBranding();
+
+  showNotification(
+    'Settings saved',
+    'success'
   );
+
+};
+
+window.renderBranding = function() {
+
+  const brand =
+    safeGetById(
+      'brandName'
+    );
+
+  if (!brand) return;
+
+  brand.textContent =
+
+    APP_STATE.settings
+      ?.brandName ||
+
+    'Caflat.Co POS';
 
 };
 
 window.loadDemoData = function() {
 
-  APP_STATE.products = [
+  const demoProducts = [
 
-    {
+    new Product({
 
-      id: 1,
+      sku: 'CK-001',
 
-      name: 'Demo Cookie',
+      name: 'Classic Cookie',
 
-      price: 100,
+      category: 'Cookies',
 
-      stock: 20
+      cost: 45,
 
-    }
+      price: 85,
+
+      stock: 24,
+
+      lowStockThreshold: 5
+
+    }),
+
+    new Product({
+
+      sku: 'CK-002',
+
+      name: 'Red Velvet Cookie',
+
+      category: 'Cookies',
+
+      cost: 55,
+
+      price: 95,
+
+      stock: 12,
+
+      lowStockThreshold: 5
+
+    })
 
   ];
 
+  APP_STATE.products =
+    demoProducts;
+
   renderProductsTable();
 
-  alert(
-    'Demo data loaded'
+  renderPOSProducts();
+
+  showNotification(
+    'Demo data loaded',
+    'success'
   );
 
 };
@@ -206,3 +277,15 @@ window.resetData = function() {
   location.reload();
 
 };
+
+document.addEventListener(
+
+  'DOMContentLoaded',
+
+  () => {
+
+    renderBranding();
+
+  }
+
+);
