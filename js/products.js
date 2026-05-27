@@ -159,7 +159,7 @@ function collectVariants() {
 
   const rows =
     document.querySelectorAll(
-      '.variant-row'
+      '.variant-card'
     );
 
   return [...rows]
@@ -426,10 +426,25 @@ function renderProductsTable() {
 
   products.forEach(product => {
 
+    const isLowStock =
+
+      Number(product.stock || 0)
+
+      <=
+
+      Number(
+        product.lowStockThreshold || 0
+      );
+
     const row =
       document.createElement(
         'tr'
       );
+
+    row.className =
+      isLowStock
+        ? 'low-stock-row'
+        : '';
 
     row.innerHTML = `
 
@@ -446,6 +461,22 @@ function renderProductsTable() {
       <td>${product.margin}%</td>
 
       <td>${product.stock}</td>
+
+      <td>
+
+        ${
+          isLowStock
+
+            ? `
+              <span class="badge-low-stock">
+                LOW STOCK
+              </span>
+            `
+
+            : ''
+        }
+
+      </td>
 
       <td>
 
@@ -479,14 +510,48 @@ function renderPOSProducts() {
 
   const container =
     safeGetById(
-      'posProducts'
+      'productGrid'
     );
 
   if (!container) return;
 
   container.innerHTML = '';
 
-  getProducts().forEach(product => {
+  const products =
+    getProducts();
+
+  if (!products.length) {
+
+    container.innerHTML = `
+
+      <div class="empty-state">
+
+        No products available
+
+      </div>
+
+    `;
+
+    return;
+
+  }
+
+  products.forEach(product => {
+
+    const isLowStock =
+
+      Number(product.stock || 0)
+
+      <=
+
+      Number(
+        product.lowStockThreshold || 0
+      );
+
+    const isOutOfStock =
+
+      Number(product.stock || 0)
+      <= 0;
 
     const card =
       document.createElement(
@@ -494,29 +559,89 @@ function renderPOSProducts() {
       );
 
     card.className =
-      'pos-product-card';
+      `
+        pos-product-card
+        ${isLowStock ? 'low-stock' : ''}
+        ${isOutOfStock ? 'out-of-stock' : ''}
+      `;
 
     card.innerHTML = `
 
-      <div class="pos-product-name">
+      <div class="pos-card-top">
 
-        ${product.name}
+        <div class="pos-category-badge">
+
+          ${product.category || 'General'}
+
+        </div>
+
+        ${
+          isLowStock
+
+            ? `
+
+              <div class="pos-low-stock-pill">
+
+                Low Stock
+
+              </div>
+
+            `
+
+            : ''
+        }
 
       </div>
 
-      <div class="pos-product-price">
+      <div class="pos-product-body">
 
-        ${formatCurrency(product.price)}
+        <div class="pos-product-name">
+
+          ${product.name}
+
+        </div>
+
+        <div class="pos-product-description">
+
+          ${
+            product.description ||
+
+            'Freshly prepared'
+          }
+
+        </div>
+
+      </div>
+
+      <div class="pos-product-footer">
+
+        <div class="pos-product-price">
+
+          ${formatCurrency(product.price)}
+
+        </div>
+
+        <div class="pos-product-stock">
+
+          ${product.stock} left
+
+        </div>
 
       </div>
 
     `;
 
-    card.onclick = () => {
+    if (!isOutOfStock) {
 
-      addToCart(product.id);
+      card.onclick = () => {
 
-    };
+        addToCart(
+          product.id
+        );
+
+      };
+
+    }
 
     container.appendChild(card);
 
