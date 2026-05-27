@@ -76,25 +76,21 @@
     text-transform: uppercase;
   }
   .category-tabs button.active { background: #000; color: #fff; }
-  .product-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 10px;
-  }
-  .product-card {
-    border: 1px solid #000;
-    padding: 14px;
-    cursor: pointer;
-    text-align: center;
-    transition: all 0.1s;
-    background: #fff;
-    user-select: none;
-  }
-  .product-card:hover { background: #000; color: #fff; }
-  .product-card .name { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
-  .product-card .price { font-size: 12px; }
-  .product-card.low-stock { border-style: dashed; opacity: 0.7; }
-  .product-card.out-of-stock { opacity: 0.3; pointer-events: none; }
+  .product-grid{
+
+  display:grid;
+
+  grid-template-columns:
+    repeat(auto-fill,minmax(260px,1fr));
+
+  gap:22px;
+
+  align-content:start;
+
+  width:100%;
+
+}
+  
 
   .cart-header { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; padding-bottom: 10px; border-bottom: 1px solid #000; margin-bottom: 10px; }
   .cart-items { flex: 1; overflow-y: auto; }
@@ -858,4 +854,369 @@ body.login-active{
 .inventory-warning::before{
   content:'⚠';
   font-size:14px;
+}
+
+
+/* ========================================
+   COMMERCIAL POS PRODUCT SYSTEM
+======================================== */
+
+.pos-product-card{
+
+  position:relative;
+
+  background:#fff;
+
+  border:1px solid #e5e5e5;
+
+  border-radius:22px;
+
+  padding:22px;
+
+  min-height:240px;
+
+  display:flex;
+
+  flex-direction:column;
+
+  justify-content:space-between;
+
+  text-align:left;
+
+  cursor:pointer;
+
+  transition:
+    transform .16s ease,
+    box-shadow .16s ease,
+    border-color .16s ease;
+
+  overflow:hidden;
+
+}
+
+.pos-product-card:hover{
+
+  transform:translateY(-3px);
+
+  border-color:#111;
+
+  box-shadow:
+    0 14px 34px rgba(0,0,0,.08);
+
+}
+
+.pos-card-top{
+
+  display:flex;
+
+  justify-content:space-between;
+
+  align-items:flex-start;
+
+  margin-bottom:18px;
+
+}
+
+.pos-category-badge{
+
+  display:inline-flex;
+
+  align-items:center;
+
+  justify-content:center;
+
+  padding:7px 12px;
+
+  border-radius:999px;
+
+  background:#f4f4f4;
+
+  font-size:10px;
+
+  font-weight:700;
+
+  letter-spacing:1px;
+
+  text-transform:uppercase;
+
+  color:#666;
+
+}
+
+.pos-low-stock-pill{
+
+  display:inline-flex;
+
+  align-items:center;
+
+  justify-content:center;
+
+  padding:6px 10px;
+
+  border-radius:999px;
+
+  background:#fee2e2;
+
+  color:#b91c1c;
+
+  font-size:10px;
+
+  font-weight:700;
+
+  letter-spacing:1px;
+
+  text-transform:uppercase;
+
+}
+
+.pos-product-body{
+
+  flex:1;
+
+  display:flex;
+
+  flex-direction:column;
+
+  justify-content:center;
+
+}
+
+.pos-product-name{
+
+  font-size:22px;
+
+  font-weight:900;
+
+  line-height:1.1;
+
+  margin-bottom:12px;
+
+  color:#111;
+
+}
+
+.pos-product-description{
+
+  font-size:13px;
+
+  line-height:1.5;
+
+  color:#777;
+
+}
+
+.pos-product-footer{
+
+  display:flex;
+
+  justify-content:space-between;
+
+  align-items:flex-end;
+
+  margin-top:26px;
+
+}
+
+.pos-product-price{
+
+  font-size:28px;
+
+  font-weight:900;
+
+  color:#111;
+
+}
+
+.pos-product-stock{
+
+  font-size:11px;
+
+  font-weight:700;
+
+  letter-spacing:1px;
+
+  text-transform:uppercase;
+
+  color:#777;
+
+}
+
+.pos-product-card.out-of-stock{
+
+  opacity:.45;
+
+  filter:grayscale(1);
+
+  cursor:not-allowed;
+
+}
+
+.pos-product-card.out-of-stock::after{
+
+  content:'OUT OF STOCK';
+
+  position:absolute;
+
+  top:14px;
+  right:-40px;
+
+  transform:rotate(45deg);
+
+  background:#111;
+
+  color:#fff;
+
+  padding:8px 40px;
+
+  font-size:9px;
+
+  font-weight:700;
+
+  letter-spacing:1px;
+
+}
+
+.pos-products{
+
+  flex:1;
+
+  padding:28px;
+
+  overflow-y:auto;
+
+}
+
+.pos-cart{
+
+  width:420px;
+
+  min-width:420px;
+
+  max-width:420px;
+
+  background:#fafafa;
+
+  border-left:1px solid #ddd;
+
+  padding:24px;
+
+  display:flex;
+
+  flex-direction:column;
+
+  height:calc(100vh - 72px);
+
+}
+
+.empty-cart-state{
+
+  flex:1;
+
+  display:flex;
+
+  flex-direction:column;
+
+  justify-content:center;
+
+  align-items:center;
+
+  text-align:center;
+
+  min-height:420px;
+
+}
+
+.empty-cart-icon{
+
+  font-size:44px;
+
+  margin-bottom:14px;
+
+}
+
+.empty-cart-title{
+
+  font-size:22px;
+
+  font-weight:800;
+
+  margin-bottom:8px;
+
+}
+
+.empty-cart-subtitle{
+
+  font-size:14px;
+
+  color:#777;
+
+}
+
+#cartItems{
+
+  flex:1;
+
+  overflow-y:auto;
+
+  padding-right:4px;
+
+}
+
+@media(max-width:1024px){
+
+  .view.active{
+
+    flex-direction:column;
+
+  }
+
+  .pos-cart{
+
+    width:100%;
+
+    min-width:100%;
+
+    max-width:100%;
+
+    height:auto;
+
+    border-left:none;
+
+    border-top:1px solid #ddd;
+
+  }
+
+}
+
+@media(max-width:768px){
+
+  .product-grid{
+
+    grid-template-columns:
+      repeat(2,1fr);
+
+    gap:16px;
+
+  }
+
+  .pos-product-card{
+
+    min-height:200px;
+
+    padding:16px;
+
+  }
+
+  .pos-product-name{
+
+    font-size:17px;
+
+  }
+
+  .pos-product-price{
+
+    font-size:22px;
+
+  }
+
 }
