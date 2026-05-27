@@ -10,6 +10,13 @@ if (!window.UNITS) {
 
 }
 
+/* =========================
+   BACKWARD COMPATIBILITY
+========================= */
+
+const UNIT_CONVERSIONS =
+  UNITS.CONVERSIONS;
+
 function getIngredients() {
 
   return APP_STATE.ingredients || [];
