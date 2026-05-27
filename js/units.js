@@ -1,12 +1,8 @@
 /* =========================
-   Units System
+   GLOBAL UNIT SYSTEM
 ========================= */
 
 window.UNITS = {
-
-  SOLID_BASE: 'g',
-
-  LIQUID_BASE: 'ml',
 
   CONVERSIONS: {
 
@@ -14,39 +10,53 @@ window.UNITS = {
 
     kg: 1000,
 
+    mg: 0.001,
+
     ml: 1,
 
-    l: 1000
+    l: 1000,
+
+    pc: 1,
+
+    pcs: 1
 
   }
 
 };
 
-function normalizeUnitValue(
-  value,
-  unit
-) {
+/* =========================
+   GLOBAL HELPERS
+========================= */
 
-  const multiplier =
-    UNITS.CONVERSIONS[
+window.normalizeUnitValue =
+  function(
+    value,
+    unit
+  ) {
+
+    const safeUnit =
       String(unit || '')
-        .toLowerCase()
-    ];
+        .toLowerCase();
 
-  if (!multiplier) {
+    const multiplier =
+      window.UNITS.CONVERSIONS[
+        safeUnit
+      ];
 
-    console.warn(
-      'Unknown unit:',
-      unit
+    if (!multiplier) {
+
+      console.warn(
+        'Unknown unit:',
+        unit
+      );
+
+      return Number(value || 0);
+
+    }
+
+    return (
+      Number(value || 0) *
+      multiplier
     );
 
-    return Number(value || 0);
-
-  }
-
-  return (
-    Number(value || 0) *
-    multiplier
-  );
-
-}
+  };
