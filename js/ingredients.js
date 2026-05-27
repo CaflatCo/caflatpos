@@ -1,81 +1,31 @@
-/* =========================
-   Ingredients Module
-========================= */
+class Ingredient {
 
-if (!window.UNITS) {
+  constructor(data = {}) {
 
-  window.UNITS = {
+    this.id =
+      data.id || generateId();
 
-    CONVERSIONS: {
+    this.name =
+      data.name || '';
 
-      g: 1,
-      kg: 1000,
-      ml: 1,
-      l: 1000,
-      pc: 1
+    this.unit =
+      data.unit || 'g';
 
-    }
+    this.stock =
+      Number(data.stock || 0);
 
-  };
+    this.packageQty =
+      Number(data.packageQty || 0);
 
-}
+    this.packageCost =
+      Number(data.packageCost || 0);
 
-/* =========================
-   BACKWARD COMPATIBILITY
-========================= */
-
-const UNIT_CONVERSIONS =
-  (window.UNITS && window.UNITS.CONVERSIONS)
-
-    ? window.UNITS.CONVERSIONS
-
-    : {
-
-        g: 1,
-        kg: 1000,
-        ml: 1,
-        l: 1000,
-        pc: 1
-
-      };
-
-/* =========================
-   SAFE NORMALIZER
-========================= */
-
-function normalizeUnitValue(
-  value,
-  unit
-) {
-
-  const safeUnit =
-    String(unit || '')
-      .toLowerCase();
-
-  const multiplier =
-    UNIT_CONVERSIONS[safeUnit];
-
-  if (!multiplier) {
-
-    console.warn(
-      'Unknown unit:',
-      unit
-    );
-
-    return Number(value || 0);
+    this.reorderLevel =
+      Number(data.reorderLevel || 0);
 
   }
 
-  return (
-    Number(value || 0) *
-    multiplier
-  );
-
 }
-
-/* =========================
-   INGREDIENT STORAGE
-========================= */
 
 function getIngredients() {
 
@@ -83,41 +33,19 @@ function getIngredients() {
 
 }
 
-function setIngredients(
-  ingredients
-) {
+function setIngredients(ingredients) {
 
-  APP_STATE.ingredients =
-    ingredients;
-
-  saveState();
-
-}
-
-/* =========================
-   NORMALIZE STOCK
-========================= */
-
-function normalizeIngredientStock(
-  quantity,
-  unit
-) {
-
-  return normalizeUnitValue(
-    quantity,
-    unit
+  updateState(
+    'ingredients',
+    () => ingredients
   );
 
 }
 
-/* =========================
-   TABLE RENDER
-========================= */
-
 function renderIngredientsTable() {
 
   const tableBody =
-    document.querySelector(
+    safeQuery(
       '#ingredientsTable tbody'
     );
 
@@ -132,7 +60,7 @@ function renderIngredientsTable() {
 
     tableBody.innerHTML = `
       <tr>
-        <td colspan="6" class="empty-state">
+        <td colspan="6">
           No ingredients found
         </td>
       </tr>
@@ -153,26 +81,34 @@ function renderIngredientsTable() {
       row.innerHTML = `
 
         <td>
-          ${ingredient.name || '-'}
+          ${ingredient.name}
         </td>
 
         <td>
-          ${ingredient.unit || '-'}
+          ${ingredient.unit}
         </td>
 
         <td>
-          ${ingredient.stock || 0}
+          ${ingredient.packageCost}
         </td>
 
         <td>
-          ${ingredient.cost || 0}
+          ${ingredient.stock}
         </td>
 
         <td>
-          ${ingredient.supplier || '-'}
+          ${ingredient.reorderLevel}
         </td>
 
         <td>
+
+          <button
+            class="btn btn-sm"
+            onclick="editIngredient('${ingredient.id}')">
+
+            Edit
+
+          </button>
 
           <button
             class="btn btn-sm"
@@ -195,308 +131,155 @@ function renderIngredientsTable() {
 
 }
 
-/* =========================
-   SAVE INGREDIENT
-========================= */
-
 function saveIngredient() {
 
-  try {
+  const ingredient =
 
-    const name =
-      document
-        .getElementById(
+    new Ingredient({
+
+      name:
+        safeGetById(
           'ingredientName'
-        )
-        ?.value?.trim();
+        )?.value,
 
-    const unit =
-      document
-        .getElementById(
+      unit:
+        safeGetById(
           'ingredientPurchaseUnit'
-        )
-        ?.value;
+        )?.value,
 
-    const packageQty =
-      Number(
-        document
-          .getElementById(
+      packageQty:
+        Number(
+          safeGetById(
             'ingredientPackageQty'
-          )
-          ?.value || 0
-      );
+          )?.value || 0
+        ),
 
-    const packageCost =
-      Number(
-        document
-          .getElementById(
+      packageCost:
+        Number(
+          safeGetById(
             'ingredientPurchaseCost'
-          )
-          ?.value || 0
-      );
-
-    const stock =
-      Number(
-        document
-          .getElementById(
-            'ingredientStock'
-          )
-          ?.value || 0
-      );
-
-    const reorderLevel =
-      Number(
-        document
-          .getElementById(
-            'ingredientReorder'
-          )
-          ?.value || 0
-      );
-
-    if (!name) {
-
-      alert(
-        'Ingredient name required'
-      );
-
-      return;
-
-    }
-
-    const normalizedStock =
-
-      normalizeIngredientStock(
-        stock,
-        unit
-      );
-
-    const ingredients =
-      getIngredients();
-
-    ingredients.push({
-
-      id: Date.now(),
-
-      name,
-
-      unit,
-
-      packageQty,
-
-      packageCost,
-
-      reorderLevel,
+          )?.value || 0
+        ),
 
       stock:
-        normalizedStock
+        Number(
+          safeGetById(
+            'ingredientStock'
+          )?.value || 0
+        ),
+
+      reorderLevel:
+        Number(
+          safeGetById(
+            'ingredientReorder'
+          )?.value || 0
+        )
 
     });
-
-    setIngredients(
-      ingredients
-    );
-
-    renderIngredientsTable();
-
-    closeModal(
-      'ingredientModal'
-    );
-
-    showNotification(
-      'Ingredient saved',
-      'success'
-    );
-
-  } catch (error) {
-
-    console.error(error);
-
-    alert(
-      'Ingredient save failed: ' +
-      error.message
-    );
-
-  }
-
-}
-
-/* =========================
-   DELETE INGREDIENT
-========================= */
-
-function deleteIngredient(
-  ingredientId
-) {
-
-  const confirmed =
-    confirm(
-      'Delete this ingredient?'
-    );
-
-  if (!confirmed) return;
 
   const ingredients =
     getIngredients();
 
-  const updatedIngredients =
+  ingredients.push(
+    ingredient
+  );
 
-    ingredients.filter(
+  setIngredients(
+    ingredients
+  );
+
+  renderIngredientsTable();
+
+  closeModal(
+    'ingredientModal'
+  );
+
+  showNotification(
+    'Ingredient saved',
+    'success'
+  );
+
+}
+
+function editIngredient(id) {
+
+  const ingredient =
+    getIngredients().find(
+      item =>
+        String(item.id) ===
+        String(id)
+    );
+
+  if (!ingredient) {
+
+    return;
+
+  }
+
+  safeGetById(
+    'ingredientName'
+  ).value =
+    ingredient.name;
+
+  safeGetById(
+    'ingredientPurchaseUnit'
+  ).value =
+    ingredient.unit;
+
+  safeGetById(
+    'ingredientPackageQty'
+  ).value =
+    ingredient.packageQty;
+
+  safeGetById(
+    'ingredientPurchaseCost'
+  ).value =
+    ingredient.packageCost;
+
+  safeGetById(
+    'ingredientStock'
+  ).value =
+    ingredient.stock;
+
+  safeGetById(
+    'ingredientReorder'
+  ).value =
+    ingredient.reorderLevel;
+
+  deleteIngredient(id);
+
+  openModal(
+    'ingredientModal'
+  );
+
+}
+
+function deleteIngredient(id) {
+
+  const ingredients =
+
+    getIngredients().filter(
       ingredient =>
 
         String(
           ingredient.id
         ) !==
 
-        String(
-          ingredientId
-        )
+        String(id)
     );
 
   setIngredients(
-    updatedIngredients
+    ingredients
   );
 
   renderIngredientsTable();
 
 }
-
-/* =========================
-   DEDUCT STOCK
-========================= */
-
-function deductIngredientStock(
-  ingredientId,
-  quantityToDeduct
-) {
-
-  const ingredients =
-    getIngredients();
-
-  const updatedIngredients =
-
-    ingredients.map(
-      ingredient => {
-
-        if (
-
-          String(
-            ingredient.id
-          ) !==
-
-          String(
-            ingredientId
-          )
-
-        ) {
-
-          return ingredient;
-
-        }
-
-        return {
-
-          ...ingredient,
-
-          stock:
-
-            Math.max(
-
-              0,
-
-              Number(
-                ingredient.stock || 0
-              ) -
-
-              Number(
-                quantityToDeduct || 0
-              )
-
-            )
-
-        };
-
-      }
-    );
-
-  setIngredients(
-    updatedIngredients
-  );
-
-  renderIngredientsTable();
-
-}
-
-/* =========================
-   RECIPE DEDUCTION
-========================= */
-
-function deductRecipeIngredients(
-  product,
-  quantitySold = 1
-) {
-
-  if (!product.recipe?.length) {
-
-    return;
-
-  }
-
-  product.recipe.forEach(
-    recipeItem => {
-
-      const deductionAmount =
-
-        Number(
-          recipeItem.quantity || 0
-        ) *
-
-        Number(
-          quantitySold || 1
-        );
-
-      deductIngredientStock(
-
-        recipeItem.ingredientId,
-
-        deductionAmount
-
-      );
-
-    }
-  );
-
-}
-
-/* =========================
-   RECIPE COST
-========================= */
-
-function calculateRecipeCost(
-  recipeItems = []
-) {
-
-  let totalCost = 0;
-
-  recipeItems.forEach(
-    item => {
-
-      totalCost += Number(
-        item.cost || 0
-      );
-
-    }
-  );
-
-  return totalCost;
-
-}
-
-/* =========================
-   INIT
-========================= */
 
 document.addEventListener(
+
   'DOMContentLoaded',
 
   renderIngredientsTable
+
 );
