@@ -19,6 +19,7 @@ function calculateTotalRevenue() {
 
   const revenue =
     measurePerformance(
+
       'calculate-total-revenue',
 
       () => {
@@ -27,20 +28,27 @@ function calculateTotalRevenue() {
           getSales();
 
         return sales.reduce(
+
           (total, sale) => {
 
             return (
+
               total +
+
               Number(
                 sale.total || 0
               )
+
             );
 
           },
+
           0
+
         );
 
       }
+
     );
 
   setCache(
@@ -67,6 +75,7 @@ function calculateTotalOrders() {
 
   const orders =
     measurePerformance(
+
       'calculate-total-orders',
 
       () => {
@@ -74,6 +83,7 @@ function calculateTotalOrders() {
         return getSales().length;
 
       }
+
     );
 
   setCache(
@@ -100,6 +110,7 @@ function calculateAverageOrderValue() {
 
   const average =
     measurePerformance(
+
       'calculate-average-order',
 
       () => {
@@ -114,11 +125,15 @@ function calculateAverageOrderValue() {
         }
 
         return (
+
           calculateTotalRevenue() /
+
           sales.length
+
         );
 
       }
+
     );
 
   setCache(
@@ -145,6 +160,7 @@ function getTopProducts() {
 
   const products =
     measurePerformance(
+
       'calculate-top-products',
 
       () => {
@@ -178,13 +194,15 @@ function getTopProducts() {
         return Object.entries(
           productMap
         )
+
           .sort(
-            (a, b) =>
-              b[1] - a[1]
+            (a, b) => b[1] - a[1]
           )
+
           .slice(0, 5);
 
       }
+
     );
 
   setCache(
@@ -199,6 +217,7 @@ function getTopProducts() {
 function updateDashboardStats() {
 
   safeRender(
+
     'dashboard-stats',
 
     () => {
@@ -252,21 +271,31 @@ function updateDashboardStats() {
 
       }
 
-      trackMetric(
-        'dashboard_updated',
+      if (
+        typeof trackMetric ===
+        'function'
+      ) {
 
-        {
+        trackMetric(
 
-          revenue,
+          'dashboard_updated',
 
-          orders,
+          {
 
-          average
+            revenue,
 
-        }
-      );
+            orders,
+
+            average
+
+          }
+
+        );
+
+      }
 
     }
+
   );
 
 }
@@ -292,4 +321,13 @@ function refreshReportsCache() {
 }
 
 document.addEventListener(
-  '
+
+  'DOMContentLoaded',
+
+  () => {
+
+    updateDashboardStats();
+
+  }
+
+);
