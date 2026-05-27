@@ -37,7 +37,7 @@ function renderIngredientsTable() {
 
       <tr>
 
-        <td colspan="6">
+        <td colspan="8">
 
           No ingredients found
 
@@ -53,6 +53,18 @@ function renderIngredientsTable() {
 
   ingredients.forEach(
     ingredient => {
+
+      const unitCost =
+
+        ingredient.packageQty > 0
+
+          ? (
+              ingredient.packageCost
+              /
+              ingredient.packageQty
+            )
+
+          : 0;
 
       const isLowStock =
 
@@ -92,9 +104,23 @@ function renderIngredientsTable() {
 
         <td>
 
+          ${ingredient.packageQty}
+
+        </td>
+
+        <td>
+
           ${formatCurrency(
             ingredient.packageCost
           )}
+
+        </td>
+
+        <td>
+
+          ${formatCurrency(
+            unitCost
+          )}/${ingredient.unit}
 
         </td>
 
@@ -147,31 +173,31 @@ function renderIngredientsTable() {
 
 function openIngredientModal() {
 
-  safeGetById(
+  document.getElementById(
     'ingredientId'
   ).value = '';
 
-  safeGetById(
+  document.getElementById(
     'ingredientName'
   ).value = '';
 
-  safeGetById(
+  document.getElementById(
     'ingredientPurchaseUnit'
   ).value = 'g';
 
-  safeGetById(
+  document.getElementById(
     'ingredientPackageQty'
   ).value = '';
 
-  safeGetById(
+  document.getElementById(
     'ingredientPurchaseCost'
   ).value = '';
 
-  safeGetById(
+  document.getElementById(
     'ingredientStock'
   ).value = '';
 
-  safeGetById(
+  document.getElementById(
     'ingredientReorder'
   ).value = '';
 
@@ -187,7 +213,7 @@ function saveIngredient() {
     getIngredients();
 
   const ingredientId =
-    safeGetById(
+    document.getElementById(
       'ingredientId'
     )?.value;
 
@@ -198,39 +224,39 @@ function saveIngredient() {
       generateId(),
 
     name:
-      safeGetById(
+      document.getElementById(
         'ingredientName'
       )?.value || '',
 
     unit:
-      safeGetById(
+      document.getElementById(
         'ingredientPurchaseUnit'
       )?.value || 'g',
 
     packageQty:
       Number(
-        safeGetById(
+        document.getElementById(
           'ingredientPackageQty'
         )?.value || 0
       ),
 
     packageCost:
       Number(
-        safeGetById(
+        document.getElementById(
           'ingredientPurchaseCost'
         )?.value || 0
       ),
 
     stock:
       Number(
-        safeGetById(
+        document.getElementById(
           'ingredientStock'
         )?.value || 0
       ),
 
     reorderLevel:
       Number(
-        safeGetById(
+        document.getElementById(
           'ingredientReorder'
         )?.value || 0
       )
@@ -242,7 +268,8 @@ function saveIngredient() {
 
       item =>
 
-        String(item.id) ===
+        String(item.id)
+        ===
         String(ingredient.id)
     );
 
@@ -269,8 +296,6 @@ function saveIngredient() {
     'ingredientModal'
   );
 
-  renderIngredientsTable();
-
   showNotification(
     'Ingredient saved',
     'success'
@@ -285,43 +310,44 @@ function editIngredient(id) {
 
       item =>
 
-        String(item.id) ===
+        String(item.id)
+        ===
         String(id)
     );
 
   if (!ingredient) return;
 
-  safeGetById(
+  document.getElementById(
     'ingredientId'
   ).value =
     ingredient.id;
 
-  safeGetById(
+  document.getElementById(
     'ingredientName'
   ).value =
     ingredient.name;
 
-  safeGetById(
+  document.getElementById(
     'ingredientPurchaseUnit'
   ).value =
     ingredient.unit;
 
-  safeGetById(
+  document.getElementById(
     'ingredientPackageQty'
   ).value =
     ingredient.packageQty;
 
-  safeGetById(
+  document.getElementById(
     'ingredientPurchaseCost'
   ).value =
     ingredient.packageCost;
 
-  safeGetById(
+  document.getElementById(
     'ingredientStock'
   ).value =
     ingredient.stock;
 
-  safeGetById(
+  document.getElementById(
     'ingredientReorder'
   ).value =
     ingredient.reorderLevel;
@@ -346,7 +372,8 @@ function deleteIngredient(id) {
 
       item =>
 
-        String(item.id) !==
+        String(item.id)
+        !==
         String(id)
     );
 
