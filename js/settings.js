@@ -34,52 +34,54 @@ function resetIngredientForm() {
 
 function saveIngredient() {
 
-  const ingredient = {
+  const ingredient =
 
-    id:
-      editingIngredientId ||
+    normalizeIngredient({
 
-      generateId(),
+      id:
+        editingIngredientId ||
 
-    name:
-      safeGetById(
-        'ingredientName'
-      )?.value || '',
+        generateId(),
 
-    unit:
-      safeGetById(
-        'ingredientPurchaseUnit'
-      )?.value || 'g',
-
-    packageQty:
-      Number(
+      name:
         safeGetById(
-          'ingredientPackageQty'
-        )?.value || 0
-      ),
+          'ingredientName'
+        )?.value || '',
 
-    packageCost:
-      Number(
+      unit:
         safeGetById(
-          'ingredientPurchaseCost'
-        )?.value || 0
-      ),
+          'ingredientPurchaseUnit'
+        )?.value || 'g',
 
-    stock:
-      Number(
-        safeGetById(
-          'ingredientStock'
-        )?.value || 0
-      ),
+      packageQty:
+        Number(
+          safeGetById(
+            'ingredientPackageQty'
+          )?.value || 0
+        ),
 
-    reorderLevel:
-      Number(
-        safeGetById(
-          'ingredientReorder'
-        )?.value || 0
-      )
+      packageCost:
+        Number(
+          safeGetById(
+            'ingredientPurchaseCost'
+          )?.value || 0
+        ),
 
-  };
+      stock:
+        Number(
+          safeGetById(
+            'ingredientStock'
+          )?.value || 0
+        ),
+
+      reorderLevel:
+        Number(
+          safeGetById(
+            'ingredientReorder'
+          )?.value || 0
+        )
+
+    });
 
   let ingredients =
     getIngredients();
@@ -119,6 +121,8 @@ function saveIngredient() {
 
   renderIngredientsTable();
 
+  renderIngredientDropdowns();
+
   closeModal(
     'ingredientModal'
   );
@@ -133,12 +137,7 @@ function saveIngredient() {
 function editIngredient(id) {
 
   const ingredient =
-    getIngredients().find(
-      item =>
-
-        String(item.id) ===
-        String(id)
-    );
+    getIngredientById(id);
 
   if (!ingredient) {
 
@@ -248,7 +247,7 @@ function renderCategories() {
       );
 
     item.style.marginBottom =
-      '8px';
+      '10px';
 
     item.innerHTML = `
 
@@ -257,10 +256,14 @@ function renderCategories() {
         justify-content:space-between;
         align-items:center;
         border:1px solid #000;
-        padding:8px;
+        padding:12px;
+        border-radius:10px;
+        background:#fff;
       ">
 
-        <span>${category}</span>
+        <span>
+          ${category}
+        </span>
 
         <button
           class="btn btn-sm"
@@ -301,6 +304,11 @@ function deleteCategory(name) {
 
   renderCategoryOptions();
 
+  showNotification(
+    'Category deleted',
+    'success'
+  );
+
 }
 
 function renderCategoryOptions() {
@@ -315,30 +323,31 @@ function renderCategoryOptions() {
       'productCategoryFilter'
     );
 
+  const categories =
+    APP_STATE.categories || [];
+
   if (select) {
 
     select.innerHTML = '';
 
-    APP_STATE.categories.forEach(
-      category => {
+    categories.forEach(category => {
 
-        const option =
-          document.createElement(
-            'option'
-          );
-
-        option.value =
-          category;
-
-        option.textContent =
-          category;
-
-        select.appendChild(
-          option
+      const option =
+        document.createElement(
+          'option'
         );
 
-      }
-    );
+      option.value =
+        category;
+
+      option.textContent =
+        category;
+
+      select.appendChild(
+        option
+      );
+
+    });
 
   }
 
@@ -347,26 +356,24 @@ function renderCategoryOptions() {
     filter.innerHTML =
       '<option value="">All Categories</option>';
 
-    APP_STATE.categories.forEach(
-      category => {
+    categories.forEach(category => {
 
-        const option =
-          document.createElement(
-            'option'
-          );
-
-        option.value =
-          category;
-
-        option.textContent =
-          category;
-
-        filter.appendChild(
-          option
+      const option =
+        document.createElement(
+          'option'
         );
 
-      }
-    );
+      option.value =
+        category;
+
+      option.textContent =
+        category;
+
+      filter.appendChild(
+        option
+      );
+
+    });
 
   }
 
@@ -389,40 +396,103 @@ function addRecipeRow() {
 
       ingredient =>
 
-        `<option value="${ingredient.id}">
+        `
+
+        <option value="${ingredient.id}">
+
           ${ingredient.name}
-        </option>`
+          (${ingredient.unit})
+
+        </option>
+
+        `
 
     ).join('');
 
-  const row =
+  const card =
     document.createElement(
       'div'
     );
 
-  row.className =
-    'recipe-row form-row';
+  card.className =
+    'recipe-row';
 
-  row.innerHTML = `
+  card.style = `
+    border:1px solid #000;
+    padding:16px;
+    border-radius:12px;
+    margin-bottom:14px;
+    background:#fff;
+  `;
 
-    <select class="recipe-ingredient">
+  card.innerHTML = `
 
-      ${options}
+    <div style="
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:14px;
+    ">
 
-    </select>
+      <strong>
+        Recipe Ingredient
+      </strong>
 
-    <input
-      type="number"
-      class="recipe-qty"
-      placeholder="Quantity"
-      min="0"
-      step="0.01"
-    />
+      <button
+        type="button"
+        class="btn btn-sm"
+        onclick="this.closest('.recipe-row').remove()">
+
+        Remove
+
+      </button>
+
+    </div>
+
+    <div style="
+      display:grid;
+      grid-template-columns:2fr 1fr;
+      gap:12px;
+    ">
+
+      <div>
+
+        <label>
+          Ingredient
+        </label>
+
+        <select
+          class="recipe-ingredient"
+        >
+
+          ${options}
+
+        </select>
+
+      </div>
+
+      <div>
+
+        <label>
+          Quantity Used
+        </label>
+
+        <input
+          type="number"
+          class="recipe-qty"
+          placeholder="0"
+          min="0"
+          step="0.01"
+        />
+
+      </div>
+
+    </div>
 
   `;
 
   builder.appendChild(
-    row
+    card
   );
 
 }
