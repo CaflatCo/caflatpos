@@ -1,544 +1,510 @@
-window.openIngredientModal =
-  function () {
+function initializeUIActions() {
 
-    if (
-      typeof resetIngredientForm ===
-      'function'
-    ) {
+  bindPrimaryButtons();
 
-      resetIngredientForm();
+  bindModalButtons();
 
-    }
+  bindImportExport();
 
-    openModal(
-      'ingredientModal'
+  bindVariantBuilder();
+
+  bindRecipeBuilder();
+
+}
+
+function bindPrimaryButtons() {
+
+  const addProductBtn =
+    document.getElementById(
+      'addProductBtn'
     );
 
-  };
-
-window.openInventoryModal =
-  function () {
-
-    openModal(
-      'inventoryModal'
+  const addIngredientBtn =
+    document.getElementById(
+      'addIngredientBtn'
     );
 
-  };
-
-window.openProductModal =
-  function () {
-
-    if (
-      typeof resetProductForm ===
-      'function'
-    ) {
-
-      resetProductForm();
-
-    }
-
-    if (
-      typeof renderCategoryOptions ===
-      'function'
-    ) {
-
-      renderCategoryOptions();
-
-    }
-
-    openModal(
-      'productModal'
+  const addCategoryBtn =
+    document.getElementById(
+      'addCategoryBtn'
     );
 
-  };
+  const saveProductBtn =
+    document.getElementById(
+      'saveProductBtn'
+    );
 
-window.addVariantRow =
-  function (data = {}) {
+  const saveIngredientBtn =
+    document.getElementById(
+      'saveIngredientBtn'
+    );
 
-    const builder =
-      document.getElementById(
-        'variantBuilder'
-      );
+  const saveSettingsBtn =
+    document.getElementById(
+      'saveSettingsBtn'
+    );
 
-    if (!builder) return;
+  const loadDemoBtn =
+    document.getElementById(
+      'loadDemoBtn'
+    );
 
-    const card =
-      document.createElement(
-        'div'
-      );
+  const exportSalesBtn =
+    document.getElementById(
+      'exportSalesBtn'
+    );
 
-    card.className =
-      'variant-card';
+  if (addProductBtn) {
 
-    card.innerHTML = `
-
-      <div class="variant-card-head">
-
-        <strong>
-          Variant
-        </strong>
-
-        <button
-          type="button"
-          class="btn btn-secondary btn-sm remove-variant-btn">
-
-          Remove
-
-        </button>
-
-      </div>
-
-      <div class="form-row">
-
-        <div class="form-group">
-
-          <label>
-            Variant Name
-          </label>
-
-          <input
-            type="text"
-            class="variant-name"
-            placeholder="e.g. Box of 6"
-            value="${data.label || data.name || ''}"
-          />
-
-        </div>
-
-        <div class="form-group">
-
-          <label>
-            Price
-          </label>
-
-          <input
-            type="number"
-            class="variant-price"
-            min="0"
-            step="0.01"
-            value="${data.price || 0}"
-          />
-
-        </div>
-
-      </div>
-
-    `;
-
-    card.querySelector(
-      '.remove-variant-btn'
-    ).addEventListener(
+    addProductBtn.addEventListener(
       'click',
-      () => card.remove()
-    );
+      () => {
 
-    builder.appendChild(card);
-
-  };
-
-window.renderBranding =
-  function () {
-
-    const brand =
-      document.getElementById(
-        'brandName'
-      );
-
-    if (!brand) return;
-
-    brand.textContent =
-      APP_STATE.settings
-        ?.brandName ||
-
-      'Caflat.Co POS';
-
-  };
-
-window.saveSettings =
-  function () {
-
-    const settings = {
-
-      brandName:
-        document.getElementById(
-          'setBrandName'
-        )?.value?.trim()
-
-        ||
-
-        'Caflat.Co POS',
-
-      currency:
-        document.getElementById(
-          'setCurrency'
-        )?.value || '₱',
-
-      taxRate:
-        Number(
-          document.getElementById(
-            'setTaxRate'
-          )?.value || 0
-        ),
-
-      receiptFooter:
-        document.getElementById(
-          'setReceiptFooter'
-        )?.value || ''
-
-    };
-
-    updateState(
-      'settings',
-      () => settings
-    );
-
-    renderBranding();
-
-    showNotification(
-      'Settings saved',
-      'success'
-    );
-
-  };
-
-window.addCategory =
-  function () {
-
-    const input =
-      document.getElementById(
-        'newCategoryInput'
-      );
-
-    if (!input) return;
-
-    const value =
-      input.value.trim();
-
-    if (!value) {
-
-      showNotification(
-        'Category name required',
-        'error'
-      );
-
-      return;
-
-    }
-
-    const categories =
-      Array.isArray(
-        APP_STATE.categories
-      )
-
-        ? [...APP_STATE.categories]
-
-        : [];
-
-    const exists =
-      categories.some(
-        category =>
-
-          category.toLowerCase()
-          ===
-          value.toLowerCase()
-      );
-
-    if (exists) {
-
-      showNotification(
-        'Category already exists',
-        'error'
-      );
-
-      return;
-
-    }
-
-    categories.push(value);
-
-    updateState(
-      'categories',
-      () => categories
-    );
-
-    input.value = '';
-
-    if (
-      typeof renderCategories ===
-      'function'
-    ) {
-
-      renderCategories();
-
-    }
-
-    if (
-      typeof renderCategoryOptions ===
-      'function'
-    ) {
-
-      renderCategoryOptions();
-
-    }
-
-    showNotification(
-      'Category added',
-      'success'
-    );
-
-  };
-
-window.exportSalesCSV =
-  function () {
-
-    const sales =
-      APP_STATE.sales || [];
-
-    const rows = [
-
-      'Receipt,Date,Total'
-
-    ];
-
-    sales.forEach(sale => {
-
-      rows.push([
-
-        sale.receiptNumber || '',
-        sale.createdAt || '',
-        Number(sale.total || 0)
-          .toFixed(2)
-
-      ].join(','));
-
-    });
-
-    downloadFile(
-
-      'sales.csv',
-
-      rows.join('\n'),
-
-      'text/csv'
-
-    );
-
-    showNotification(
-      'Sales exported',
-      'success'
-    );
-
-  };
-
-window.loadDemoData =
-  function () {
-
-    const demoCategories = [
-
-      'Cookies',
-      'Chewy Cookies',
-      'Beverages'
-
-    ];
-
-    const demoIngredients = [
-
-      {
-
-        id:
-          generateId(),
-
-        name: 'Flour',
-
-        unit: 'g',
-
-        packageQty: 5000,
-
-        packageCost: 199,
-
-        stock: 4000,
-
-        reorderLevel: 500
-
-      },
-
-      {
-
-        id:
-          generateId(),
-
-        name: 'Sugar',
-
-        unit: 'g',
-
-        packageQty: 1000,
-
-        packageCost: 56,
-
-        stock: 750,
-
-        reorderLevel: 200
-
-      },
-
-      {
-
-        id:
-          generateId(),
-
-        name: 'Butter',
-
-        unit: 'g',
-
-        packageQty: 500,
-
-        packageCost: 175,
-
-        stock: 120,
-
-        reorderLevel: 200
+        openProductModal();
 
       }
+    );
 
-    ];
+  }
 
-    const demoProducts = [
+  if (addIngredientBtn) {
 
-      {
+    addIngredientBtn.addEventListener(
+      'click',
+      () => {
 
-        id:
-          generateId(),
+        openIngredientModal();
 
-        sku: 'CK-001',
+      }
+    );
 
-        name:
-          'Classic Cookie',
+  }
 
-        category:
-          'Cookies',
+  if (addCategoryBtn) {
 
-        cost: 45,
+    addCategoryBtn.addEventListener(
+      'click',
+      addCategory
+    );
 
-        price: 85,
+  }
 
-        stock: 24,
+  if (saveProductBtn) {
 
-        reorderLevel: 5,
+    saveProductBtn.addEventListener(
+      'click',
+      saveProduct
+    );
 
-        variants: []
+  }
 
-      },
+  if (saveIngredientBtn) {
 
-      {
+    saveIngredientBtn.addEventListener(
+      'click',
+      saveIngredient
+    );
 
-        id:
-          generateId(),
+  }
 
-        sku: 'RV-001',
+  if (saveSettingsBtn) {
 
-        name:
-          'Red Velvet Cookie',
+    saveSettingsBtn.addEventListener(
+      'click',
+      saveSettings
+    );
 
-        category:
-          'Cookies',
+  }
 
-        cost: 55,
+  if (loadDemoBtn) {
 
-        price: 95,
+    loadDemoBtn.addEventListener(
+      'click',
+      loadDemoData
+    );
 
-        stock: 12,
+  }
 
-        reorderLevel: 5,
+  if (exportSalesBtn) {
 
-        variants: [
+    exportSalesBtn.addEventListener(
+      'click',
+      exportSalesReport
+    );
 
-          {
+  }
 
-            id:
-              generateId(),
+}
 
-            name:
-              'Box of 4',
+function bindModalButtons() {
 
-            price: 360
+  document
+    .querySelectorAll(
+      '[data-close-modal]'
+    )
+    .forEach(
+      button => {
 
-          },
+        button.addEventListener(
+          'click',
+          () => {
 
-          {
+            const target =
+              button.dataset
+                .closeModal;
 
-            id:
-              generateId(),
+            if (!target)
+              return;
 
-            name:
-              'Box of 6',
-
-            price: 520
+            closeModal(
+              target
+            );
 
           }
-
-        ]
+        );
 
       }
-
-    ];
-
-    updateState(
-      'categories',
-      () => demoCategories
     );
 
-    updateState(
-      'ingredients',
-      () => demoIngredients
+}
+
+function bindImportExport() {
+
+  const exportBtn =
+    document.getElementById(
+      'exportDataBtn'
     );
 
-    updateState(
-      'products',
-      () => demoProducts
+  const importInput =
+    document.getElementById(
+      'importDataInput'
     );
 
-    renderCategories();
+  if (exportBtn) {
 
-    renderCategoryOptions();
-
-    renderProductsTable();
-
-    renderPOSProducts();
-
-    renderIngredientsTable();
-
-    renderIngredientDropdowns();
-
-    renderBranding();
-
-    showNotification(
-      'Demo data loaded',
-      'success'
+    exportBtn.addEventListener(
+      'click',
+      exportAllData
     );
 
-  };
+  }
 
-window.resetData =
-  function () {
+  if (importInput) {
 
-    const confirmed =
-      confirm(
-        'Reset all data?'
+    importInput.addEventListener(
+      'change',
+      event => {
+
+        const file =
+          event.target
+            .files?.[0];
+
+        if (!file)
+          return;
+
+        importAllData(
+          file
+        );
+
+        event.target.value =
+          '';
+
+      }
+    );
+
+  }
+
+}
+
+function bindVariantBuilder() {
+
+  const addVariantBtn =
+    document.getElementById(
+      'addVariantBtn'
+    );
+
+  if (!addVariantBtn)
+    return;
+
+  addVariantBtn.addEventListener(
+    'click',
+    () => {
+
+      addVariantRow();
+
+    }
+  );
+
+}
+
+function addVariantRow(
+  variant = null
+) {
+
+  const container =
+    document.getElementById(
+      'variantBuilder'
+    );
+
+  if (!container)
+    return;
+
+  const row =
+    document.createElement(
+      'div'
+    );
+
+  row.className =
+    'variant-row';
+
+  row.innerHTML = `
+
+    <input
+      type="text"
+      class="variant-name"
+      placeholder="Variant Name"
+      value="${variant?.name || ''}">
+
+    <input
+      type="number"
+      class="variant-price"
+      placeholder="Price"
+      value="${variant?.price || ''}">
+
+    <button
+      type="button"
+      class="btn btn-secondary remove-variant-btn">
+
+      Remove
+
+    </button>
+
+  `;
+
+  const removeBtn =
+    row.querySelector(
+      '.remove-variant-btn'
+    );
+
+  removeBtn.addEventListener(
+    'click',
+    () => {
+
+      row.remove();
+
+    }
+  );
+
+  container.appendChild(
+    row
+  );
+
+}
+
+function bindRecipeBuilder() {
+
+  const addRecipeBtn =
+    document.getElementById(
+      'addRecipeBtn'
+    );
+
+  if (!addRecipeBtn)
+    return;
+
+  addRecipeBtn.addEventListener(
+    'click',
+    () => {
+
+      addRecipeRow();
+
+    }
+  );
+
+}
+
+function addRecipeRow(
+  recipe = null
+) {
+
+  const container =
+    document.getElementById(
+      'recipeBuilder'
+    );
+
+  if (!container)
+    return;
+
+  const row =
+    document.createElement(
+      'div'
+    );
+
+  row.className =
+    'recipe-row';
+
+  row.innerHTML = `
+
+    <select
+      class="recipe-ingredient">
+
+    </select>
+
+    <input
+      type="number"
+      class="recipe-qty"
+      placeholder="Quantity"
+      value="${recipe?.quantity || ''}">
+
+    <button
+      type="button"
+      class="btn btn-secondary remove-recipe-btn">
+
+      Remove
+
+    </button>
+
+  `;
+
+  const removeBtn =
+    row.querySelector(
+      '.remove-recipe-btn'
+    );
+
+  removeBtn.addEventListener(
+    'click',
+    () => {
+
+      row.remove();
+
+    }
+  );
+
+  container.appendChild(
+    row
+  );
+
+  renderIngredientDropdowns();
+
+  if (
+    recipe?.ingredientId
+  ) {
+
+    row.querySelector(
+      '.recipe-ingredient'
+    ).value =
+      recipe.ingredientId;
+
+  }
+
+}
+
+function openVariantSelector(
+  productId
+) {
+
+  const product =
+    getProducts().find(
+      item =>
+
+        String(item.id)
+        ===
+        String(productId)
+    );
+
+  if (
+    !product ||
+    !Array.isArray(
+      product.variants
+    )
+  ) {
+    return;
+  }
+
+  const container =
+    document.getElementById(
+      'variantSelectorOptions'
+    );
+
+  if (!container)
+    return;
+
+  container.innerHTML =
+    '';
+
+  product.variants.forEach(
+    variant => {
+
+      const option =
+        document.createElement(
+          'button'
+        );
+
+      option.type =
+        'button';
+
+      option.className =
+        'variant-option-btn';
+
+      option.innerHTML = `
+
+        <div>
+
+          ${variant.name}
+
+        </div>
+
+        <div>
+
+          ${formatCurrency(
+            variant.price
+          )}
+
+        </div>
+
+      `;
+
+      option.addEventListener(
+        'click',
+        () => {
+
+          addToCart(
+            product.id,
+            variant
+          );
+
+          closeModal(
+            'variantSelectorModal'
+          );
+
+        }
       );
 
-    if (!confirmed) return;
+      container.appendChild(
+        option
+      );
 
-    localStorage.clear();
+    }
+  );
 
-    location.reload();
+  openModal(
+    'variantSelectorModal'
+  );
 
-  };
+}
 
 document.addEventListener(
   'DOMContentLoaded',
-  () => {
-
-    renderBranding();
-
-  }
+  initializeUIActions
 );
+
+window.initializeUIActions =
+  initializeUIActions;
+
+window.addVariantRow =
+  addVariantRow;
+
+window.addRecipeRow =
+  addRecipeRow;
+
+window.openVariantSelector =
+  openVariantSelector;
