@@ -1,771 +1,1074 @@
-<!DOCTYPE html>
 
-<html lang="en">
-<head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>POS System</title>
-<link href="https://fonts.googleapis.com" rel="preconnect"/>
-<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&amp;display=swap" rel="stylesheet"/>
-<link href="./css/styles.css" rel="stylesheet"/>
-</head>
-<body>
-<div class="login-screen" id="loginScreen">
-<div class="login-card">
-<h2 style="
-      text-align:center;
-      width:100%;
-      font-size:32px;
-      font-weight:900;
-      letter-spacing:4px;
-      margin-bottom:28px;
-    ">Caflat.Co POS</h2>
-<input id="loginUsername" placeholder="Username" type="text"/>
-<input id="loginPassword" placeholder="Password" type="password"/>
-<button id="loginBtn">
-      Login
-    </button>
-</div>
-</div>
-<div id="app" style="display:none;">
-<header>
-<div style="display:flex;align-items:center;gap:12px;"><h1 id="brandName">Caflat.Co POS</h1><div class="role-badge" id="roleBadge">ADMIN</div></div>
-<nav>
-<button class="active" data-view="pos">Point of Sale</button>
-<button data-view="dashboard">Dashboard</button>
-<button data-view="products">Products</button>
-<button data-view="inventory">Inventory</button>
-<button data-view="ingredients">Ingredients</button>
-<button data-view="sales">Sales</button>
-<button data-view="reports">Reports</button>
-<button data-view="settings">Settings</button>
-</nav>
-</header>
-<main>
-<!-- POS VIEW -->
-<section class="view" id="view-pos">
-<div class="pos-products">
-<div class="category-tabs" id="categoryTabs"></div>
-<div class="product-grid" id="productGrid"></div>
-</div>
-<div class="pos-cart">
-<div class="cart-header">Current Order</div>
-<div class="cart-items" id="cartItems">
-<div class="empty-state">No items added</div>
-</div>
-<div class="cart-summary">
-<div class="cart-row"><span>Subtotal</span><span id="cartSubtotal">0.00</span></div>
-<div class="cart-row"><span>Discount</span><span id="cartDiscount">0.00</span></div>
-<div class="cart-row"><span>Tax</span><span id="cartTax">0.00</span></div>
-<div class="cart-row total"><span>Total</span><span id="cartTotal">0.00</span></div>
-<div class="discount-input">
-<input id="discountValue" min="0" placeholder="Discount" step="0.01" type="number"/>
-<select id="discountType">
-<option value="percent">%</option>
-<option value="amount">Amt</option>
-</select>
-<button class="btn btn-sm" id="applyDiscountBtn">Apply</button>
-</div>
-<div class="cart-actions">
-<button id="clearCartBtn">Clear</button>
-<button id="holdOrderBtn">Hold</button>
-<button class="checkout-btn" id="checkoutBtn">Checkout</button>
-</div>
-</div>
-</div>
-</section>
-<!-- DASHBOARD -->
-<section class="view" id="view-dashboard">
-<div class="panel">
-<div class="panel-header">
-<h2>Dashboard</h2>
-</div>
-<!-- STATS -->
-<div class="stats-grid" id="statsGrid"></div>
-<!-- QUICK PERFORMANCE -->
-<div class="section-title">
-      Quick Performance
-    </div>
-<div style="
-      border:1px solid #000;
-      padding:16px;
-      background:#fff;
-      margin-bottom:24px;
-      width:100%;
-      overflow:hidden;
-    ">
-<canvas id="salesChart" style="height:320px;"></canvas>
-</div>
-<!-- TOP PRODUCTS -->
-<div class="section-title">
-      Top Selling Products
-    </div>
-<div class="table-wrapper">
-<table id="topProductsTable">
-<thead>
-<tr>
-<th>Product</th>
-<th>Qty Sold</th>
-<th>Revenue</th>
-<th>Profit</th>
-</tr>
-</thead>
-<tbody></tbody>
-</table>
-</div>
-<!-- LOW STOCK -->
-<div class="section-title">
-      Low Stock Alerts
-    </div>
-<div class="table-wrapper">
-<table id="lowStockTable">
-<thead>
-<tr>
-<th>Product</th>
-<th>Stock</th>
-<th>Reorder Level</th>
-<th>Status</th>
-</tr>
-</thead>
-<tbody></tbody>
-</table>
-</div>
-</div>
-</section>
-<!-- PRODUCTS -->
-<section class="view" id="view-products">
-<div class="panel">
-<div class="panel-header">
-<h2>Products</h2>
-<button class="btn" onclick="openProductModal()">+ Add Product</button>
-</div>
-<div class="filter-bar">
-<input id="productSearch" oninput="renderProductsTable()" placeholder="Search..." type="text"/>
-<select id="productCategoryFilter" onchange="renderProductsTable()">
-<option value="">All Categories</option>
-</select>
-</div>
-<div class="table-wrapper"><table id="productsTable">
-<thead>
-<tr>
-<th>SKU</th><th>Name</th><th>Category</th><th>Cost</th>
-<th>Price</th><th>Margin</th><th>Stock</th><th>Actions</th>
-</tr>
-</thead>
-<tbody></tbody>
-</table>
-</div>
-</div></section>
-<!-- INVENTORY -->
-<section class="view" id="view-inventory">
-<div class="panel">
-<div class="panel-header">
-<h2>Inventory Movements</h2>
-<button class="btn" onclick="openInventoryModal()">+ Stock Adjustment</button>
-</div>
-<div class="table-wrapper"><table id="inventoryTable">
-<thead>
-<tr>
-<th>Date</th><th>Product</th><th>Type</th>
-<th>Qty</th><th>Reason</th><th>Balance</th>
-</tr>
-</thead>
-<tbody></tbody>
-</table>
-</div>
-</div></section>
-<!-- INGREDIENTS -->
-<section class="view" id="view-ingredients">
-<div class="panel">
-<div class="panel-header">
-<h2>Ingredients &amp; Recipes</h2>
-<button class="btn" onclick="openIngredientModal()">+ Add Ingredient</button>
-</div>
-<div class="section-title">Raw Ingredients</div>
-<div class="table-wrapper">
-<table id="ingredientsTable">
-<thead>
-<tr>
-<th>Name</th>
-<th>Base Unit</th>
-<th>Package Qty</th>
-<th>Package Cost</th>
-<th>Cost / Unit</th>
-<th>Stock</th>
-<th>Reorder Level</th>
-<th>Actions</th>
-</tr>
-</thead>
-<tbody></tbody>
-</table>
-</div>
-</div></section>
-<!-- SALES -->
-<section class="view" id="view-sales">
-<div class="panel">
-<div class="panel-header">
-<h2>Sales History</h2>
-<button class="btn btn-secondary" onclick="exportSalesCSV()">Export CSV</button>
-</div>
-<div class="filter-bar">
-<input id="salesFromDate" onchange="renderSalesTable()" type="date"/>
-<input id="salesToDate" onchange="renderSalesTable()" type="date"/>
-<select id="salesPaymentFilter" onchange="renderSalesTable()">
-<option value="">All Payments</option>
-<option value="cash">Cash</option>
-<option value="gcash">GCash</option>
-<option value="maya">Maya</option>
-<option value="bank">Bank Transfer</option>
-<option value="qrph">QR PH</option>
-</select>
-</div>
-<div class="table-wrapper"><table id="salesTable">
-<thead>
-<tr>
-<th>Receipt #</th><th>Date</th><th>Items</th>
-<th>Subtotal</th><th>Total</th><th>Actions</th>
-</tr>
-</thead>
-<tbody></tbody>
-</table>
-</div>
-</div></section>
-<!-- REPORTS -->
-<section class="view" id="view-reports">
-<div class="panel">
-<div class="panel-header">
-<h2>Reports &amp; Analytics</h2>
-</div>
-<div class="filter-bar">
-<input id="reportFromDate" onchange="renderReports()" type="date"/>
-<input id="reportToDate" onchange="renderReports()" type="date"/>
-<button class="btn btn-secondary" onclick="renderReports()">
-          Apply Filter
-        </button>
-</div>
-<div class="stats-grid" id="reportStatsGrid"></div>
-<div class="section-title">
-        Revenue Trend
-      </div>
-<div style="border:1px solid #000;padding:16px;background:#fff;margin-bottom:24px;">
-<canvas id="reportRevenueChart"></canvas>
-</div>
-<div class="section-title">
-        Product Performance
-      </div>
-<table id="reportProductsTable">
-<thead>
-<tr>
-<th>Product</th>
-<th>Qty Sold</th>
-<th>Revenue</th>
-<th>Profit</th>
-</tr>
-</thead>
-<tbody></tbody>
-</table>
-<div class="section-title">
-        Ingredient Usage
-      </div>
-<table id="ingredientUsageTable">
-<thead>
-<tr>
-<th>Ingredient</th>
-<th>Estimated Usage</th>
-<th>Remaining Stock</th>
-</tr>
-</thead>
-<tbody></tbody>
-</table>
-<div class="section-title">
-        Operational Insights
-      </div>
-<table id="reportInsightsTable">
-<thead>
-<tr>
-<th>Metric</th>
-<th>Value</th>
-</tr>
-</thead>
-<tbody></tbody>
-</table>
-</div>
-</section>
-<!-- SETTINGS -->
-<section class="view" id="view-settings">
-<div class="panel">
-<div class="panel-header"><h2>Settings</h2></div>
-<div class="form-group">
-<label>Brand Name</label>
-<input id="setBrandName" type="text"/>
-</div>
-<div class="form-row">
-<div class="form-group">
-<label>Currency Symbol</label>
-<input id="setCurrency" type="text"/>
-</div>
-<div class="form-group">
-<label>Tax Rate (%)</label>
-<input id="setTaxRate" step="0.01" type="number"/>
-</div>
-</div>
-<div class="form-group">
-<label>Receipt Footer</label>
-<textarea id="setReceiptFooter" rows="2"></textarea>
-</div>
-<button class="btn" onclick="saveSettings()">Save Settings</button>
-<div class="section-title">Categories</div>
-<div id="categoryList"></div>
-<div class="form-row" style="margin-top:10px;">
-<input id="newCategoryInput" placeholder="New category name" style="padding:9px; border:1px solid #000;" type="text"/>
-<button class="btn btn-secondary" onclick="addCategory()">Add Category</button>
-</div>
-<div class="section-title">Data Management</div>
-<div style="display:flex; gap:10px; flex-wrap:wrap;">
-<button class="btn btn-secondary" onclick="exportData()">Export All Data</button>
-<button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">Import Data</button>
-<input accept=".json" id="importFile" onchange="importData(event)" style="display:none" type="file"/>
-<button class="btn btn-secondary" onclick="loadDemoData()">Load Demo Data</button>
-<button class="btn btn-secondary" onclick="resetData()" style="border-color:#000;">Reset All Data</button>
-</div>
-</div>
-</section>
-</main>
-<!-- PRODUCT MODAL -->
-<div class="modal-overlay" id="productModal">
-<div class="modal">
-<h3 id="productModalTitle">Add Product</h3>
-<input id="productId" type="hidden"/>
-<div class="form-row">
-<div class="form-group"><label>SKU</label><input id="productSKU" type="text"/></div>
-<div class="form-group">
-<label>Category</label>
-<select id="productCategory"></select>
-</div>
-</div>
-<div class="form-group"><label>Name</label><input id="productNameInput" type="text"/></div>
-<div class="form-row">
-<div class="form-group"><label>Cost Price</label><input id="productCost" min="0" step="0.01" type="number"/></div>
-<div class="form-group"><label>Selling Price</label><input id="productPrice" min="0" step="0.01" type="number"/></div>
-</div>
-<div class="form-row">
-<div class="form-group"><label>Stock</label><input id="productStock" min="0" type="number"/></div>
-<div class="form-group"><label>Reorder Level</label><input id="productReorder" min="0" type="number"/></div>
-</div>
-<div class="form-group">
-<label>Description (optional)</label>
-<textarea id="productDescription" rows="2"></textarea>
-</div>
-<div class="section-title">
-  Product Variants
-</div>
-<div class="form-group">
-<label>Product Type</label>
-<select id="productType">
-<option value="standard">Standard Product</option>
-<option value="assorted">Assorted Box</option>
-</select>
-</div>
-<div id="variantBuilder"></div>
-<button class="btn btn-secondary" onclick="addVariantRow()" type="button">
-  + Add Variant
-</button>
-<div class="section-title">
-  Recipe Configuration
-</div>
-<div class="form-group">
-<label>Recipe Mode</label>
-<select id="recipeMode" onchange="toggleRecipeMode()">
-<option value="unit">
-      Per Product
-    </option>
-<option value="batch">
-      Per Batch
-    </option>
-</select>
-</div>
-<div class="form-group" id="batchYieldWrap" style="display:none;">
-<label>
-    Batch Yield
-  </label>
-<input id="batchYield" min="1" placeholder="How many products per batch?" type="number" value="1"/>
-</div>
-<div class="section-title">
-  Recipe Ingredients
-</div>
-<div id="recipeBuilder"></div>
-<button class="btn btn-secondary" onclick="addRecipeRow()" type="button">
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-  + Add Ingredient
+html, body {
+  height: 100%;
+}
 
-</button>
-<div class="modal-actions">
-<button class="btn btn-secondary" onclick="closeModal('productModal')">Cancel</button>
-<button class="btn" onclick="saveProduct()">Save Product</button>
-</div>
-</div>
-</div>
-<!-- INGREDIENT MODAL -->
-<div class="modal-overlay" id="ingredientModal">
-<div class="modal">
-<h3>Add Ingredient</h3>
-<input id="ingredientId" type="hidden"/>
-<div class="form-group">
-<label>Ingredient Name</label>
-<input id="ingredientName" type="text"/>
-</div>
-<div class="form-row">
-<div class="form-group">
-<label>Package Unit</label>
-<select id="ingredientPurchaseUnit">
-<option value="g">Gram (g)</option>
-<option value="kg">Kilogram (kg)</option>
-<option value="ml">Milliliter (ml)</option>
-<option value="L">Liter (L)</option>
-<option value="pc">Piece (pc)</option>
-</select>
-</div>
-<div class="form-group">
-<label>Package Quantity</label>
-<input id="ingredientPackageQty" min="0" step="0.01" type="number"/>
-</div>
-</div>
-<div class="form-row">
-<div class="form-group">
-<label>Package Cost</label>
-<input id="ingredientPurchaseCost" min="0" step="0.01" type="number"/>
-</div>
-<div class="form-group">
-<label>Reorder Level</label>
-<input id="ingredientReorder" min="0" step="0.01" type="number"/>
-</div>
-</div>
-<div class="form-group">
-<label>Current Stock</label>
-<input id="ingredientStock" min="0" step="0.01" type="number"/>
-</div>
-<div class="modal-actions">
-<button class="btn btn-secondary" onclick="closeModal('ingredientModal')">
-        Cancel
-      </button>
-<button class="btn" onclick="saveIngredient()">
-        Save
-      </button>
-</div>
-</div>
-</div>
-<!-- INVENTORY MODAL -->
-<div class="modal-overlay" id="inventoryModal">
-<div class="modal">
-<h3>Stock Adjustment</h3>
-<div class="form-group">
-<label>Product</label>
-<select id="invProduct"></select>
-</div>
-<div class="form-row">
-<div class="form-group">
-<label>Type</label>
-<select id="invType">
-<option value="in">Stock In</option>
-<option value="out">Stock Out</option>
-</select>
-</div>
-<div class="form-group"><label>Quantity</label><input id="invQty" min="1" type="number"/></div>
-</div>
-<div class="form-group"><label>Reason / Note</label><input id="invReason" placeholder="e.g. Restock, Wastage, Sample" type="text"/></div>
-<div class="modal-actions">
-<button class="btn btn-secondary" onclick="closeModal('inventoryModal')">Cancel</button>
-<button class="btn" onclick="saveInventoryMovement()">Save</button>
-</div>
-</div>
-</div>
-<!-- CHECKOUT MODAL -->
-<div class="modal-overlay" id="checkoutModal">
-<div class="modal">
-<h3>Complete Sale</h3>
-<div class="form-group">
-<label>Total Due</label>
-<input id="checkoutTotal" readonly="" type="text"/>
-</div>
-<div class="form-group">
-<label>Payment Method</label>
-<select id="checkoutPayment" onchange="togglePaymentFields()">
-<option value="cash">Cash</option>
-<option value="gcash">GCash</option>
-<option value="maya">Maya</option>
-<option value="bank">Bank Transfer</option>
-<option value="qrph">QR PH</option>
-</select>
-</div>
-<div id="qrphSection" style="display:none;text-align:center;margin-bottom:16px;">
-<div class="payment-badge" id="paymentBadge">
-        QR PAYMENT
-      </div>
-<img id="paymentQRImage" src="./assets/qr-placeholder.png" style="
-          width:280px;
-          border:1px solid #000;
-          padding:10px;
-          background:#fff;
-          border-radius:12px;
-          object-fit:contain;
-        "/>
-<div style="font-size:11px;color:#666;margin-top:8px;">
-        Scan using GCash, Maya, RCBC, or any QR PH supported banking app
-      </div>
-</div>
-<div class="form-group" id="referenceWrap" style="display:none;">
-<label>Reference Number</label>
-<input id="paymentReference" type="text"/>
-</div>
-<div class="form-group" id="tenderedWrap">
-<label>Amount Tendered</label>
-<input id="checkoutTendered" min="0" oninput="calculateChange()" step="0.01" type="number"/>
-</div>
-<div class="form-group">
-<label>Change</label>
-<input id="checkoutChange" readonly="" type="text"/>
-</div>
-<div class="form-group">
-<label>Customer Name (optional)</label>
-<input id="checkoutCustomer" type="text"/>
-</div>
-<div class="modal-actions">
-<button class="btn btn-secondary" onclick="closeModal('checkoutModal')">
-    Cancel
-  </button>
-<button class="btn" onclick="completeSale()">
-    Complete &amp; Print
-  </button>
-<button class="btn" onclick="completeSale('pending')">
-    Mark Pending
-  </button>
-</div>
-</div>
-</div>
-</div>
-<!-- RECEIPT MODAL -->
-<div class="modal-overlay" id="receiptModal">
-<div class="modal" id="receiptContent">
-<div class="receipt" id="receiptBody"></div>
-<div class="modal-actions">
-<button class="btn btn-secondary" onclick="closeModal('receiptModal')">Close</button>
-<button class="btn" onclick="window.print()">Print</button>
-</div>
-</div>
-</div>
-<!-- HIDDEN QR SOURCES -->
-<img id="gcashQR" src="./assets/qr-placeholder.png" style="display:none;"/>
-<img id="mayaQR" src="./assets/qr-placeholder.png" style="display:none;"/>
-<img id="rcbcQR" src="./assets/qr-placeholder.png" style="display:none;"/>
-<!-- VARIANT MODAL -->
-<div class="modal-overlay" id="variantModal">
-<div class="modal">
-<h3>Select Variant</h3>
-<div class="variant-options" id="variantOptions"></div>
-<div class="modal-actions">
-<button class="btn btn-secondary" onclick="closeModal('variantModal')">Cancel</button>
-</div>
-</div>
-</div>
-<script>
-(function () {
-  function getCartTotalText() {
-    const el = document.getElementById('cartTotal');
-    return (el && el.textContent ? el.textContent : '0.00').trim();
+body {
+  font-family: 'Nunito', sans-serif;
+  background: #fff;
+  color: #000;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+body.login-active {
+  overflow: hidden;
+}
+
+header {
+  background: #000;
+  color: #fff;
+  padding: 14px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid #000;
+  gap: 12px;
+}
+
+header h1 {
+  font-size: 18px;
+  letter-spacing: 3px;
+  font-weight: 300;
+}
+
+nav {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+nav button {
+  background: transparent;
+  color: #fff;
+  border: 1px solid #fff;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  transition: all 0.15s ease;
+}
+
+nav button:hover,
+nav button.active {
+  background: #fff;
+  color: #000;
+}
+
+main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  min-height: 0;
+  width: 100%;
+}
+
+.view {
+  display: none;
+  width: 100%;
+  min-height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.view.active {
+  display: flex;
+}
+
+/* POS */
+.pos-products {
+  flex: 2;
+  padding: 24px;
+  overflow-y: auto;
+  border-right: 1px solid #000;
+  min-width: 0;
+}
+
+.pos-cart {
+  flex: 1;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  background: #fafafa;
+  min-width: 340px;
+}
+
+.category-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.category-tabs button {
+  padding: 6px 14px;
+  border: 1px solid #000;
+  background: #fff;
+  color: #000;
+  cursor: pointer;
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.category-tabs button.active {
+  background: #000;
+  color: #fff;
+}
+
+#productGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 22px;
+  align-content: start;
+  width: 100%;
+}
+
+.pos-product-card {
+  position: relative;
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  border-radius: 22px;
+  padding: 22px;
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  text-align: center;
+  cursor: pointer;
+  transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+  overflow: hidden;
+}
+
+.pos-product-card:hover {
+  transform: translateY(-2px);
+  border-color: #111;
+  box-shadow: 0 14px 34px rgba(0,0,0,.08);
+}
+
+.pos-product-card.low-stock {
+  border-color: #fca5a5;
+  background: #fff7f7;
+}
+
+.pos-product-card.out-of-stock {
+  opacity: .45;
+  filter: grayscale(1);
+  cursor: not-allowed;
+}
+
+.pos-product-card.out-of-stock::after {
+  content: 'OUT OF STOCK';
+  position: absolute;
+  top: 14px;
+  right: -40px;
+  transform: rotate(45deg);
+  background: #111;
+  color: #fff;
+  padding: 8px 40px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.pos-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+
+.pos-category-badge,
+.pos-low-stock-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 12px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.pos-category-badge {
+  background: #f4f4f4;
+  color: #666;
+}
+
+.pos-low-stock-pill {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.pos-product-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.pos-product-name {
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1.1;
+  margin-bottom: 12px;
+  color: #111;
+}
+
+.pos-product-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-top: 24px;
+  gap: 12px;
+}
+
+.pos-product-price {
+  font-size: 28px;
+  font-weight: 900;
+  color: #111;
+}
+
+.pos-product-stock {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #777;
+}
+
+.product-card-actions {
+  margin-top: 14px;
+  display: flex;
+  justify-content: center;
+}
+
+.product-options-btn {
+  width: 100%;
+}
+
+.cart-header {
+  font-size: 12px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #000;
+  margin-bottom: 10px;
+}
+
+#cartItems {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 4px;
+  min-height: 0;
+}
+
+.empty-cart-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  min-height: 420px;
+}
+
+.empty-cart-icon {
+  font-size: 44px;
+  margin-bottom: 14px;
+}
+
+.empty-cart-title {
+  font-size: 22px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.empty-cart-subtitle {
+  font-size: 14px;
+  color: #777;
+}
+
+.cart-line-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 0;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.cart-line-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.cart-line-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111;
+  margin-bottom: 4px;
+  word-break: break-word;
+}
+
+.cart-line-price {
+  font-size: 13px;
+  color: #777;
+}
+
+.cart-line-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.cart-line-controls button,
+.cart-remove-btn {
+  width: 28px;
+  height: 28px;
+  border: 1px solid #111;
+  background: #fff;
+  color: #111;
+  cursor: pointer;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.cart-line-controls span {
+  min-width: 20px;
+  text-align: center;
+  font-weight: 800;
+}
+
+.cart-line-total {
+  min-width: 90px;
+  text-align: right;
+  font-size: 15px;
+  font-weight: 800;
+  color: #111;
+}
+
+.cart-summary {
+  padding-top: 10px;
+  border-top: 2px solid #000;
+  position: sticky;
+  bottom: 0;
+  background: #fafafa;
+}
+
+.cart-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  font-size: 13px;
+}
+
+.cart-row.total {
+  font-size: 18px;
+  font-weight: 700;
+  padding: 8px 0;
+  border-top: 1px solid #000;
+  margin-top: 6px;
+}
+
+.cart-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.cart-actions button,
+.checkout-btn {
+  padding: 12px;
+  border: 1px solid #000;
+  background: #fff;
+  color: #000;
+  cursor: pointer;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.checkout-btn {
+  background: #000;
+  color: #fff;
+  grid-column: span 2;
+  padding: 16px;
+  font-size: 13px;
+}
+
+.cart-actions button:hover,
+.checkout-btn:hover {
+  background: #000;
+  color: #fff;
+}
+
+.checkout-btn:hover {
+  background: #fff;
+  color: #000;
+}
+
+.discount-input {
+  display: flex;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.discount-input input,
+.discount-input select {
+  padding: 6px;
+  border: 1px solid #000;
+  background: #fff;
+  font-size: 12px;
+}
+
+.discount-input input {
+  flex: 1;
+}
+
+/* PANELS / TABLES */
+.panel {
+  width: 100%;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #000;
+  gap: 12px;
+}
+
+.panel-header h2 {
+  font-size: 16px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  font-weight: 400;
+}
+
+.btn {
+  padding: 10px 18px;
+  background: #000;
+  color: #fff;
+  border: 1px solid #000;
+  cursor: pointer;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+.btn:hover {
+  background: #fff;
+  color: #000;
+}
+
+.btn-secondary {
+  background: #fff;
+  color: #000;
+}
+
+.btn-secondary:hover {
+  background: #000;
+  color: #fff;
+}
+
+.btn-sm {
+  padding: 5px 10px;
+  font-size: 10px;
+}
+
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  min-width: 860px;
+}
+
+th, td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid #000;
+  vertical-align: middle;
+}
+
+th {
+  background: #000;
+  color: #fff;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+tr:hover td {
+  background: #f5f5f5;
+}
+
+.table-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.table-actions .btn {
+  min-width: 72px;
+}
+
+.low-stock-row td {
+  background: #fff7f7 !important;
+}
+
+.low-stock-row td:first-child {
+  border-left: 5px solid #dc2626;
+}
+
+.badge-low-stock {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #fee2e2;
+  color: #b91c1c;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  border: 1px solid #fecaca;
+}
+
+.badge-low-stock::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #dc2626;
+}
+
+/* FORMS / MODALS */
+.form-group { margin-bottom: 14px; }
+
+.form-group label {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 9px;
+  border: 1px solid #000;
+  background: #fff;
+  font-size: 13px;
+  font-family: inherit;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 18px;
+  flex-wrap: wrap;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-overlay.active {
+  display: flex;
+}
+
+.modal {
+  background: #fff;
+  border: 2px solid #000;
+  width: 100%;
+  max-width: 620px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+.modal h3 {
+  font-size: 14px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 18px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #000;
+}
+
+/* DASHBOARD */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  gap: 18px;
+  margin-bottom: 28px;
+}
+
+.stat-card {
+  border: 1px solid #000;
+  padding: 18px;
+  background: #fff;
+  min-height: 140px;
+}
+
+.stat-card .label {
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.stat-card .value {
+  font-size: 26px;
+  font-weight: 300;
+}
+
+.stat-card .sub {
+  font-size: 11px;
+  color: #666;
+  margin-top: 4px;
+}
+
+.stat-card.dark {
+  background: #000;
+  color: #fff;
+}
+
+.stat-card.dark .label { color: #aaa; }
+.stat-card.dark .sub { color: #aaa; }
+
+.dashboard-alert {
+  border-left: 5px solid #dc2626;
+  background: #fff7f7;
+}
+
+.dashboard-alert .value {
+  color: #b91c1c;
+}
+
+.section-title {
+  font-size: 12px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin: 24px 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #000;
+}
+
+.empty-state {
+  text-align: center !important;
+  padding: 60px 20px !important;
+  color: #888;
+  font-size: 13px;
+  letter-spacing: 1px;
+}
+
+.centered-empty-state {
+  text-align: center !important;
+}
+
+/* RECEIPT */
+.receipt {
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  padding: 10px;
+}
+
+.receipt-header {
+  text-align: center;
+  border-bottom: 1px dashed #000;
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+}
+
+.receipt-brand {
+  font-weight: 900;
+  letter-spacing: 2px;
+  margin-bottom: 4px;
+}
+
+.receipt-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 2px 0;
+}
+
+.receipt-divider {
+  border-top: 1px dashed #000;
+  margin: 6px 0;
+}
+
+.receipt-total {
+  font-weight: 900;
+}
+
+/* FILTERS */
+.filter-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.filter-bar input,
+.filter-bar select {
+  padding: 7px 10px;
+  border: 1px solid #000;
+  font-size: 12px;
+  background: #fff;
+}
+
+/* SETTINGS */
+.settings-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+#variantBuilder {
+  margin-bottom: 16px;
+}
+
+.variant-card {
+  border: 1px solid #111;
+  padding: 16px;
+  margin-bottom: 14px;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.variant-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.variant-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.variant-option {
+  border: 1px solid #111;
+  background: #fff;
+  padding: 14px;
+  cursor: pointer;
+  text-align: left;
+  border-radius: 14px;
+}
+
+.variant-option:hover {
+  background: #111;
+  color: #fff;
+}
+
+.variant-option-name {
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+
+.variant-option-price {
+  color: #777;
+  font-size: 13px;
+}
+
+/* LOGIN */
+.login-screen {
+  position: fixed;
+  inset: 0;
+  background: #fff;
+  z-index: 99999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.login-screen.hidden {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.login-card {
+  width: 400px;
+  border: 2px solid #000;
+  padding: 32px;
+  background: #fff;
+  position: relative;
+  z-index: 100000;
+}
+
+.login-card h2 {
+  font-size: 22px;
+  margin-bottom: 24px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+.login-card input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #000;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.login-card button {
+  width: 100%;
+  padding: 12px;
+  background: #000;
+  color: #fff;
+  border: 1px solid #000;
+  cursor: pointer;
+  font-size: 12px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.login-card button:hover {
+  background: #fff;
+  color: #000;
+}
+
+.role-badge {
+  padding: 6px 10px;
+  border: 1px solid #fff;
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+/* NOTIFICATIONS */
+#notificationContainer {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  display: grid;
+  gap: 10px;
+  z-index: 2000;
+  pointer-events: none;
+}
+
+.notification {
+  min-width: 240px;
+  max-width: 320px;
+  background: #fff;
+  border: 1px solid #000;
+  padding: 12px 14px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.12);
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity .2s ease, transform .2s ease;
+  pointer-events: auto;
+}
+
+.notification.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.notification.success { border-left: 5px solid #15803d; }
+.notification.error { border-left: 5px solid #dc2626; }
+.notification.info { border-left: 5px solid #2563eb; }
+
+.notification-content {
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+/* GENERAL RESPONSIVE */
+#app {
+  display: none;
+  width: 100%;
+  height: 100%;
+}
+
+#app.authenticated {
+  display: flex;
+  flex-direction: column;
+}
+
+#view-dashboard .panel,
+#view-reports .panel,
+#view-products .panel,
+#view-inventory .panel,
+#view-sales .panel,
+#view-settings .panel,
+#view-ingredients .panel {
+  width: 100%;
+  overflow-x: hidden;
+}
+
+#view-dashboard .table-wrapper,
+#view-reports .table-wrapper,
+#view-products .table-wrapper,
+#view-inventory .table-wrapper,
+#view-sales .table-wrapper,
+#view-ingredients .table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+#view-dashboard canvas,
+#view-reports canvas {
+  width: 100% !important;
+  max-width: 100%;
+}
+
+#productsTable,
+#ingredientsTable,
+#salesTable,
+#inventoryTable,
+#topProductsTable,
+#lowStockTable,
+#reportProductsTable,
+#ingredientUsageTable,
+#reportInsightsTable {
+  width: 100%;
+}
+
+@media (max-width: 1024px) {
+  .view.active {
+    flex-direction: column;
   }
 
-  function parseMoney(value) {
-    const n = Number(String(value || '').replace(/[^0-9.-]/g, ''));
-    return Number.isFinite(n) ? n : 0;
+  .pos-products {
+    border-right: none;
+    border-bottom: 1px solid #000;
   }
 
-  window.addCategory = function () {
-    const input = document.getElementById('newCategoryInput');
-    if (!input) return;
-
-    const value = input.value.trim();
-    if (!value) {
-      showNotification && showNotification('Category name is required', 'error');
-      return;
-    }
-
-    const categories = Array.isArray(APP_STATE?.categories) ? [...APP_STATE.categories] : [];
-    const exists = categories.some(c => String(c).toLowerCase() === value.toLowerCase());
-    if (exists) {
-      showNotification && showNotification('Category already exists', 'error');
-      return;
-    }
-
-    categories.push(value);
-    if (typeof updateState === 'function') {
-      updateState('categories', () => categories);
-    } else if (window.APP_STATE) {
-      APP_STATE.categories = categories;
-    }
-
-    input.value = '';
-    if (typeof renderCategories === 'function') renderCategories();
-    if (typeof renderCategoryOptions === 'function') renderCategoryOptions();
-    showNotification && showNotification('Category added', 'success');
-  };
-
-  window.exportData = function () {
-    const payload = {
-      exportedAt: new Date().toISOString(),
-      data: window.APP_STATE || {}
-    };
-
-    if (typeof downloadFile === 'function') {
-      downloadFile(
-        'caflatcopos-backup.json',
-        JSON.stringify(payload, null, 2),
-        'application/json'
-      );
-      showNotification && showNotification('Data exported', 'success');
-    }
-  };
-
-  window.importData = function (event) {
-    const file = event && event.target && event.target.files && event.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = function (e) {
-      try {
-        const parsed = JSON.parse(e.target.result);
-        const data = parsed && parsed.data ? parsed.data : null;
-        if (!data) throw new Error('Invalid backup');
-
-        if (typeof updateState === 'function') {
-          Object.keys(data).forEach(key => {
-            updateState(key, () => data[key]);
-          });
-        } else {
-          window.APP_STATE = data;
-        }
-
-        if (typeof renderCategories === 'function') renderCategories();
-        if (typeof renderCategoryOptions === 'function') renderCategoryOptions();
-        if (typeof renderProductsTable === 'function') renderProductsTable();
-        if (typeof renderPOSProducts === 'function') renderPOSProducts();
-        if (typeof renderIngredientsTable === 'function') renderIngredientsTable();
-        if (typeof renderInventoryTable === 'function') renderInventoryTable();
-        if (typeof renderSalesTable === 'function') renderSalesTable();
-        if (typeof renderCart === 'function') renderCart();
-        if (typeof refreshDashboard === 'function') refreshDashboard();
-
-        showNotification && showNotification('Data imported successfully', 'success');
-      } catch (err) {
-        console.error(err);
-        showNotification && showNotification('Invalid backup file', 'error');
-      }
-    };
-    reader.readAsText(file);
-  };
-
-  window.syncCheckoutFields = function () {
-    const totalText = getCartTotalText();
-    const totalInput = document.getElementById('checkoutTotal');
-    const tenderedInput = document.getElementById('checkoutTendered');
-    const changeInput = document.getElementById('checkoutChange');
-
-    if (totalInput) totalInput.value = totalText;
-    if (tenderedInput && !tenderedInput.value) {
-      tenderedInput.value = String(parseMoney(totalText).toFixed(2));
-    }
-    if (changeInput) changeInput.value = '0.00';
-  };
-
-  if (typeof window.calculateChange !== 'function') {
-    window.calculateChange = function () {
-      const total = parseMoney(getCartTotalText());
-      const tendered = parseMoney(document.getElementById('checkoutTendered')?.value || 0);
-      const change = Math.max(0, tendered - total);
-      const changeInput = document.getElementById('checkoutChange');
-      if (changeInput) changeInput.value = change.toFixed(2);
-    };
+  .pos-cart {
+    width: 100%;
+    min-width: 100%;
+    max-width: 100%;
+    height: auto;
+    border-top: 1px solid #ddd;
   }
 
-  if (typeof window.togglePaymentFields !== 'function') {
-    window.togglePaymentFields = function () {
-      const method = document.getElementById('checkoutPayment')?.value || 'cash';
-      const tenderedWrap = document.getElementById('tenderedWrap');
-      const referenceWrap = document.getElementById('referenceWrap');
-      const qrphSection = document.getElementById('qrphSection');
+  .cart-line-item {
+    flex-wrap: wrap;
+  }
+}
 
-      if (tenderedWrap) tenderedWrap.style.display = method === 'cash' ? 'block' : 'none';
-      if (referenceWrap) referenceWrap.style.display = method === 'cash' ? 'none' : 'block';
-      if (qrphSection) qrphSection.style.display = method === 'cash' ? 'none' : 'block';
-
-      window.syncCheckoutFields();
-      window.calculateChange();
-    };
+@media (max-width: 768px) {
+  header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
   }
 
-  if (typeof window.openCheckout === 'function') {
-    const originalOpenCheckout = window.openCheckout;
-    window.openCheckout = function () {
-      const result = originalOpenCheckout.apply(this, arguments);
-      window.syncCheckoutFields();
-      window.calculateChange();
-      return result;
-    };
+  nav {
+    width: 100%;
+    overflow-x: auto;
+    display: flex;
+    flex-wrap: nowrap;
+    padding-bottom: 4px;
   }
 
-  if (typeof window.completeSale === 'function') {
-    const originalCompleteSale = window.completeSale;
-    window.completeSale = function () {
-      const result = originalCompleteSale.apply(this, arguments);
-      if (typeof renderSalesTable === 'function') renderSalesTable();
-      if (typeof refreshDashboard === 'function') refreshDashboard();
-      if (typeof renderInventoryTable === 'function') renderInventoryTable();
-      if (typeof renderIngredientsTable === 'function') renderIngredientsTable();
-      return result;
-    };
+  nav button {
+    flex-shrink: 0;
   }
 
-  if (typeof window.loadDemoData === 'function') {
-    const originalLoadDemoData = window.loadDemoData;
-    window.loadDemoData = function () {
-      const result = originalLoadDemoData.apply(this, arguments);
-      if (typeof renderCategories === 'function') renderCategories();
-      if (typeof renderCategoryOptions === 'function') renderCategoryOptions();
-      if (typeof renderProductsTable === 'function') renderProductsTable();
-      if (typeof renderPOSProducts === 'function') renderPOSProducts();
-      if (typeof renderIngredientsTable === 'function') renderIngredientsTable();
-      if (typeof renderSalesTable === 'function') renderSalesTable();
-      if (typeof refreshDashboard === 'function') refreshDashboard();
-      return result;
-    };
+  .panel {
+    padding: 14px;
   }
-})();
-</script>
-<!-- CORE -->
 
+  .panel-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
 
+  .form-row {
+    grid-template-columns: 1fr;
+  }
 
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
 
-<!-- SYSTEM -->
+  #productGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
 
+  .pos-product-card {
+    min-height: 200px;
+    padding: 16px;
+  }
 
+  .pos-product-name {
+    font-size: 17px;
+  }
 
+  .pos-product-price {
+    font-size: 22px;
+  }
 
+  .cart-actions {
+    grid-template-columns: 1fr;
+  }
 
-<!-- AUTH -->
+  .checkout-btn {
+    grid-column: auto;
+  }
 
-<!-- MODULES -->
+  .modal {
+    padding: 16px;
+    max-height: 85vh;
+  }
 
-
-
-
-
-
-
-
-
-<!-- BOOT -->
-
-
-<script src="./js/runtimeGuard.js"></script><script src="./js/config.js"></script><script src="./js/utils.js"></script><script src="./js/state.js"></script><script src="./js/storage.js"></script><script src="./js/auth.js"></script><script src="./js/units.js"></script><script src="./js/products.js"></script><script src="./js/ingredients.js"></script><script src="./js/inventory.js"></script><script src="./js/sales.js"></script><script src="./js/reports.js"></script><script src="./js/settings.js"></script><script src="./js/uiActions.js"></script><script src="./js/app.js"></script><script src="./js/navigation.js"></script></body>
-</html>
+  .login-card {
+    width: min(92vw, 400px);
+  }
+}
