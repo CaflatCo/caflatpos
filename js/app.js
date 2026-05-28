@@ -36,17 +36,10 @@ function initializeApp() {
       error
     );
 
-    if (
-      typeof showNotification ===
-      'function'
-    ) {
-
-      showNotification(
-        'App initialization failed',
-        'error'
-      );
-
-    }
+    showNotification(
+      'App initialization failed',
+      'error'
+    );
 
   }
 
@@ -188,7 +181,9 @@ function bindSearchFilters() {
           id
         );
 
-      if (!el) return;
+      if (!el) {
+        return;
+      }
 
       el.addEventListener(
         evt,
@@ -384,7 +379,9 @@ function bindNavigation() {
             return;
           }
 
-          switchPage(target);
+          switchPage(
+            target
+          );
 
         }
       );
@@ -416,10 +413,25 @@ function switchPage(
 ) {
 
   const cleanTarget =
-    normalizeTarget(target);
+    normalizeTarget(
+      target
+    );
 
-  if (!cleanTarget)
+  if (!cleanTarget) {
     return;
+  }
+
+  updateState(
+    'ui',
+    current => ({
+
+      ...current,
+
+      currentView:
+        cleanTarget
+
+    })
+  );
 
   const sections =
     document.querySelectorAll(
@@ -495,28 +507,14 @@ function switchPage(
 
 function setDefaultView() {
 
-  const activeBtn =
-
-    document.querySelector(
-      '[data-view].active, [data-page].active'
-    )
-
-    ||
-
-    document.querySelector(
-      '[data-view], [data-page]'
-    );
-
-  const defaultView =
-
-    activeBtn?.dataset.view ||
-
-    activeBtn?.dataset.page ||
+  const currentView =
+    APP_STATE.ui
+      ?.currentView ||
 
     'pos';
 
   switchPage(
-    defaultView
+    currentView
   );
 
 }
@@ -528,6 +526,9 @@ document.addEventListener(
 
 window.initializeApp =
   initializeApp;
+
+window.renderEverything =
+  renderEverything;
 
 window.bindGlobalEvents =
   bindGlobalEvents;
