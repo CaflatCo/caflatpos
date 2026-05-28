@@ -1,138 +1,45 @@
-document.addEventListener(
-  'DOMContentLoaded',
-  () => {
+function initializeApp() {
 
-    try {
+  try {
 
-      if (
-        typeof restorePersistedState ===
-        'function'
-      ) {
+    if (
+      typeof restorePersistedState ===
+      'function'
+    ) {
 
-        restorePersistedState();
+      restorePersistedState();
 
-      }
+    }
 
-      if (
-        typeof renderProductsTable ===
-        'function'
-      ) {
+    renderEverything();
 
-        renderProductsTable();
+    bindGlobalEvents();
 
-      }
+    bindNavigation();
 
-      if (
-        typeof renderPOSProducts ===
-        'function'
-      ) {
+    bindCheckoutInputs();
 
-        renderPOSProducts();
+    bindModalClose();
 
-      }
+    bindSearchFilters();
 
-      if (
-        typeof renderIngredientsTable ===
-        'function'
-      ) {
+    setDefaultView();
 
-        renderIngredientsTable();
+    console.log(
+      'Caflat.Co POS initialized'
+    );
 
-      }
+  } catch (error) {
 
-      if (
-        typeof renderInventoryTable ===
-        'function'
-      ) {
+    console.error(
+      'Initialization failed',
+      error
+    );
 
-        renderInventoryTable();
-
-      }
-
-      if (
-        typeof renderSalesTable ===
-        'function'
-      ) {
-
-        renderSalesTable();
-
-      }
-
-      if (
-        typeof renderCategories ===
-        'function'
-      ) {
-
-        renderCategories();
-
-      }
-
-      if (
-        typeof renderCategoryOptions ===
-        'function'
-      ) {
-
-        renderCategoryOptions();
-
-      }
-
-      if (
-        typeof renderIngredientDropdowns ===
-        'function'
-      ) {
-
-        renderIngredientDropdowns();
-
-      }
-
-      if (
-        typeof renderLowStockAlerts ===
-        'function'
-      ) {
-
-        renderLowStockAlerts();
-
-      }
-
-      if (
-        typeof renderBranding ===
-        'function'
-      ) {
-
-        renderBranding();
-
-      }
-
-      if (
-        typeof renderCart ===
-        'function'
-      ) {
-
-        renderCart();
-
-      }
-
-      if (
-        typeof refreshDashboard ===
-        'function'
-      ) {
-
-        refreshDashboard();
-
-      }
-
-      bindGlobalEvents();
-
-      console.log(
-        'Caflat.CoPOS v1 initialized'
-      );
-
-    } catch (error) {
-
-      console.error(
-        'Initialization failed',
-        error
-      );
+    if (
+      typeof showNotification ===
+      'function'
+    ) {
 
       showNotification(
         'App initialization failed',
@@ -142,21 +49,57 @@ document.addEventListener(
     }
 
   }
-);
-
-function bindGlobalEvents() {
-
-  bindSearchFilters();
-
-  bindModalClose();
-
-  bindCheckoutInputs();
-
-  bindNavigation();
 
 }
 
-function bindSearchFilters() {
+function renderEverything() {
+
+  const renderCalls = [
+
+    'renderProductsTable',
+    'renderPOSProducts',
+    'renderIngredientsTable',
+    'renderInventoryTable',
+    'renderSalesTable',
+    'renderCategories',
+    'renderCategoryOptions',
+    'renderIngredientDropdowns',
+    'renderLowStockAlerts',
+    'renderBranding',
+    'renderCart',
+    'refreshDashboard'
+
+  ];
+
+  renderCalls.forEach(
+    fnName => {
+
+      if (
+        typeof window[fnName] ===
+        'function'
+      ) {
+
+        try {
+
+          window[fnName]();
+
+        } catch (error) {
+
+          console.error(
+            `Failed to run ${fnName}`,
+            error
+          );
+
+        }
+
+      }
+
+    }
+  );
+
+}
+
+function bindGlobalEvents() {
 
   const productSearch =
     document.getElementById(
@@ -174,9 +117,23 @@ function bindSearchFilters() {
       'input',
       () => {
 
-        renderProductsTable();
+        if (
+          typeof renderProductsTable ===
+          'function'
+        ) {
 
-        renderPOSProducts();
+          renderProductsTable();
+
+        }
+
+        if (
+          typeof renderPOSProducts ===
+          'function'
+        ) {
+
+          renderPOSProducts();
+
+        }
 
       }
     );
@@ -189,14 +146,77 @@ function bindSearchFilters() {
       'change',
       () => {
 
-        renderProductsTable();
+        if (
+          typeof renderProductsTable ===
+          'function'
+        ) {
 
-        renderPOSProducts();
+          renderProductsTable();
+
+        }
+
+        if (
+          typeof renderPOSProducts ===
+          'function'
+        ) {
+
+          renderPOSProducts();
+
+        }
 
       }
     );
 
   }
+
+}
+
+function bindSearchFilters() {
+
+  const filters = [
+
+    ['productSearch', 'input'],
+    ['productCategoryFilter', 'change']
+
+  ];
+
+  filters.forEach(
+    ([id, evt]) => {
+
+      const el =
+        document.getElementById(
+          id
+        );
+
+      if (!el) return;
+
+      el.addEventListener(
+        evt,
+        () => {
+
+          if (
+            typeof renderProductsTable ===
+            'function'
+          ) {
+
+            renderProductsTable();
+
+          }
+
+          if (
+            typeof renderPOSProducts ===
+            'function'
+          ) {
+
+            renderPOSProducts();
+
+          }
+
+        }
+      );
+
+    }
+  );
 
 }
 
@@ -206,132 +226,326 @@ function bindModalClose() {
     .querySelectorAll(
       '.modal-overlay'
     )
-    .forEach(overlay => {
+    .forEach(
+      overlay => {
 
-      overlay.addEventListener(
-        'click',
-        event => {
+        overlay.addEventListener(
+          'click',
+          event => {
 
-          if (
-            event.target === overlay
-          ) {
-
-            const modal =
-              overlay.closest(
-                '.modal'
-              );
-
-            if (!modal) return;
+            if (
+              event.target !== overlay
+            ) {
+              return;
+            }
 
             closeModal(
-              modal.id
+              overlay.id
             );
 
           }
+        );
 
-        }
-      );
+      }
+    );
 
-    });
+}
+
+function getCheckoutFieldIds() {
+
+  return {
+
+    tendered: [
+      'checkoutTendered',
+      'amountTendered'
+    ],
+
+    change: [
+      'checkoutChange',
+      'changeAmount'
+    ],
+
+    total: [
+      'checkoutTotal'
+    ],
+
+    payment: [
+      'checkoutPayment'
+    ],
+
+    reference: [
+      'paymentReference'
+    ],
+
+    customer: [
+      'checkoutCustomer'
+    ]
+
+  };
 
 }
 
 function bindCheckoutInputs() {
 
-  const tenderedInput =
-    document.getElementById(
-      'amountTendered'
-    );
+  const ids =
+    getCheckoutFieldIds();
 
-  if (tenderedInput) {
+  [
+    ...ids.tendered,
+    ...ids.change,
+    ...ids.total
+  ].forEach(
+    id => {
 
-    tenderedInput.addEventListener(
-      'input',
-      calculateChange
-    );
+      const el =
+        document.getElementById(
+          id
+        );
 
-  }
+      if (el) {
+
+        el.addEventListener(
+          'input',
+          () => {
+
+            if (
+              typeof calculateChange ===
+              'function'
+            ) {
+
+              calculateChange();
+
+            }
+
+          }
+        );
+
+      }
+
+    }
+  );
+
+  ids.payment.forEach(
+    id => {
+
+      const el =
+        document.getElementById(
+          id
+        );
+
+      if (el) {
+
+        el.addEventListener(
+          'change',
+          () => {
+
+            if (
+              typeof togglePaymentFields ===
+              'function'
+            ) {
+
+              togglePaymentFields();
+
+            }
+
+          }
+        );
+
+      }
+
+    }
+  );
 
 }
 
 function bindNavigation() {
 
-  const navItems =
+  const navButtons =
     document.querySelectorAll(
-      '[data-page]'
+      '[data-view], [data-page]'
     );
 
-  navItems.forEach(item => {
+  navButtons.forEach(
+    button => {
 
-    item.addEventListener(
-      'click',
-      () => {
+      button.addEventListener(
+        'click',
+        () => {
 
-        const target =
-          item.dataset.page;
+          const target =
 
-        switchPage(target);
+            button.dataset.view ||
 
-      }
-    );
+            button.dataset.page ||
 
-  });
+            '';
+
+          if (!target) {
+            return;
+          }
+
+          switchPage(target);
+
+        }
+      );
+
+    }
+  );
 
 }
 
-function switchPage(pageId) {
+function normalizeTarget(
+  target
+) {
 
-  document
-    .querySelectorAll(
-      '.page'
-    )
-    .forEach(page => {
+  return String(
+    target || ''
+  )
 
-      page.classList.remove(
+    .trim()
+
+    .replace(
+      /^view-/,
+      ''
+    );
+
+}
+
+function switchPage(
+  target
+) {
+
+  const cleanTarget =
+    normalizeTarget(target);
+
+  if (!cleanTarget)
+    return;
+
+  const sections =
+    document.querySelectorAll(
+      '.view, .page'
+    );
+
+  sections.forEach(
+    section => {
+
+      section.classList.remove(
         'active'
       );
 
-    });
+    }
+  );
 
-  document
-    .querySelectorAll(
-      '[data-page]'
-    )
-    .forEach(item => {
+  const navButtons =
+    document.querySelectorAll(
+      '[data-view], [data-page]'
+    );
 
-      item.classList.remove(
+  navButtons.forEach(
+    button => {
+
+      button.classList.remove(
         'active'
       );
 
-    });
+    }
+  );
 
-  const page =
+  const targetSection =
+
     document.getElementById(
-      pageId
+      `view-${cleanTarget}`
+    )
+
+    ||
+
+    document.getElementById(
+      cleanTarget
     );
 
-  if (page) {
+  if (targetSection) {
 
-    page.classList.add(
+    targetSection.classList.add(
       'active'
     );
 
   }
 
-  const nav =
+  const activeButton =
+
     document.querySelector(
-      `[data-page="${pageId}"]`
+      `[data-view="${cleanTarget}"]`
+    )
+
+    ||
+
+    document.querySelector(
+      `[data-page="${cleanTarget}"]`
     );
 
-  if (nav) {
+  if (activeButton) {
 
-    nav.classList.add(
+    activeButton.classList.add(
       'active'
     );
 
   }
 
 }
+
+function setDefaultView() {
+
+  const activeBtn =
+
+    document.querySelector(
+      '[data-view].active, [data-page].active'
+    )
+
+    ||
+
+    document.querySelector(
+      '[data-view], [data-page]'
+    );
+
+  const defaultView =
+
+    activeBtn?.dataset.view ||
+
+    activeBtn?.dataset.page ||
+
+    'pos';
+
+  switchPage(
+    defaultView
+  );
+
+}
+
+document.addEventListener(
+  'DOMContentLoaded',
+  initializeApp
+);
+
+window.initializeApp =
+  initializeApp;
+
+window.bindGlobalEvents =
+  bindGlobalEvents;
+
+window.bindSearchFilters =
+  bindSearchFilters;
+
+window.bindModalClose =
+  bindModalClose;
+
+window.bindCheckoutInputs =
+  bindCheckoutInputs;
+
+window.bindNavigation =
+  bindNavigation;
 
 window.switchPage =
+  switchPage;
+
+window.switchView =
   switchPage;
