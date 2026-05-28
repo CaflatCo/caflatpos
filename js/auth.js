@@ -1,55 +1,82 @@
 const AUTH_USERS = {
+
   admin: {
     password: 'Ry9@qm408me',
     role: 'ADMIN'
   },
+
   staff: {
     password: 'staff123',
     role: 'STAFF'
   }
+
 };
 
-const AUTH_STORAGE_KEY = 'caflat_auth';
+const AUTH_STORAGE_KEY =
+  'caflat_auth';
 
 function getAuthSession() {
+
   try {
-    const raw = localStorage.getItem(AUTH_STORAGE_KEY);
-    if (!raw) return null;
 
-    const parsed = JSON.parse(raw);
+    const raw =
+      localStorage.getItem(
+        AUTH_STORAGE_KEY
+      );
 
-    if (!parsed || !parsed.role) {
+    if (!raw) {
+      return null;
+    }
+
+    const parsed =
+      JSON.parse(raw);
+
+    if (
+      !parsed ||
+      !parsed.role
+    ) {
       return null;
     }
 
     return parsed;
+
   } catch (error) {
+
     console.error(
       'Failed to read auth session',
       error
     );
 
     return null;
+
   }
+
 }
 
 function saveAuthSession(
   username,
   role
 ) {
+
   localStorage.setItem(
+
     AUTH_STORAGE_KEY,
+
     JSON.stringify({
       username,
       role
     })
+
   );
+
 }
 
 function clearAuthSession() {
+
   localStorage.removeItem(
     AUTH_STORAGE_KEY
   );
+
 }
 
 function showAppShell() {
@@ -154,7 +181,9 @@ function showLoginShell() {
 
 }
 
-function applyAuth(role) {
+function applyAuth(
+  role
+) {
 
   showAppShell();
 
@@ -178,13 +207,6 @@ function applyAuth(role) {
   ) {
 
     switchPage('pos');
-
-  } else if (
-    typeof switchView ===
-    'function'
-  ) {
-
-    switchView('pos');
 
   }
 
@@ -232,23 +254,10 @@ function login() {
     user.password !== password
   ) {
 
-    if (
-      typeof showNotification ===
-      'function'
-    ) {
-
-      showNotification(
-        'Invalid username or password',
-        'error'
-      );
-
-    } else {
-
-      alert(
-        'Invalid username or password'
-      );
-
-    }
+    showNotification(
+      'Invalid username or password',
+      'error'
+    );
 
     return;
 
@@ -259,38 +268,19 @@ function login() {
     user.role
   );
 
-  if (
-    typeof updateState ===
-    'function'
-  ) {
+  updateState(
+    'currentUserRole',
+    () => user.role
+  );
 
-    updateState(
-      'currentUserRole',
-      () => user.role
-    );
+  applyAuth(
+    user.role
+  );
 
-  } else if (
-    window.APP_STATE
-  ) {
-
-    APP_STATE.currentUserRole =
-      user.role;
-
-  }
-
-  applyAuth(user.role);
-
-  if (
-    typeof showNotification ===
-    'function'
-  ) {
-
-    showNotification(
-      'Login successful',
-      'success'
-    );
-
-  }
+  showNotification(
+    'Login successful',
+    'success'
+  );
 
 }
 
@@ -298,17 +288,10 @@ function logout() {
 
   clearAuthSession();
 
-  if (
-    typeof showNotification ===
-    'function'
-  ) {
-
-    showNotification(
-      'Logged out successfully',
-      'info'
-    );
-
-  }
+  showNotification(
+    'Logged out successfully',
+    'info'
+  );
 
   location.reload();
 
@@ -386,26 +369,14 @@ function initializeAuth() {
     ].role === session.role
   ) {
 
-    if (
-      typeof updateState ===
-      'function'
-    ) {
+    updateState(
+      'currentUserRole',
+      () => session.role
+    );
 
-      updateState(
-        'currentUserRole',
-        () => session.role
-      );
-
-    } else if (
-      window.APP_STATE
-    ) {
-
-      APP_STATE.currentUserRole =
-        session.role;
-
-    }
-
-    applyAuth(session.role);
+    applyAuth(
+      session.role
+    );
 
   }
 
