@@ -1,7 +1,11 @@
-const STORAGE_KEY =
-  'caflatcopos_v1';
+const APP_STATE = {
+  currentUserRole: 'STAFF',
 
-const DEFAULT_STATE = {
+  settings: {
+    brandName: 'Caflat.CoPOS v1',
+    taxRate: 0,
+    receiptFooter: 'Thank you for choosing Caflat.Co'
+  },
 
   products: [],
 
@@ -13,129 +17,59 @@ const DEFAULT_STATE = {
 
   heldOrders: [],
 
-  categories: [],
+  categories: [
+    'Cookies',
+    'Chewy Cookies',
+    'Drinks'
+  ],
 
-  settings: {
-
-    brandName:
-      'Caflat.Co POS',
-
-    currency: '₱',
-
-    taxRate: 0,
-
-    receiptFooter:
-      'Thank you for your purchase!'
-
+  ui: {
+    currentView: 'pos',
+    activeCategory: 'All'
   }
-
 };
-
-let APP_STATE =
-  loadState();
-
-function loadState() {
-
-  try {
-
-    const raw =
-      localStorage.getItem(
-        STORAGE_KEY
-      );
-
-    if (!raw) {
-
-      return structuredClone(
-        DEFAULT_STATE
-      );
-
-    }
-
-    const parsed =
-      JSON.parse(raw);
-
-    return {
-
-      ...structuredClone(
-        DEFAULT_STATE
-      ),
-
-      ...parsed
-
-    };
-
-  } catch (error) {
-
-    console.error(
-      'Failed to load state',
-      error
-    );
-
-    return structuredClone(
-      DEFAULT_STATE
-    );
-
-  }
-
-}
-
-function saveState() {
-
-  try {
-
-    localStorage.setItem(
-
-      STORAGE_KEY,
-
-      JSON.stringify(
-        APP_STATE
-      )
-
-    );
-
-  } catch (error) {
-
-    console.error(
-      'Failed to save state',
-      error
-    );
-
-  }
-
-}
 
 function updateState(
   key,
   updater
 ) {
 
-  if (
-    typeof updater !==
-    'function'
-  ) {
-
-    return;
-
-  }
-
   const current =
     APP_STATE[key];
 
   APP_STATE[key] =
-    updater(current);
+    typeof updater ===
+    'function'
 
-  saveState();
+      ? updater(current)
+
+      : updater;
+
+  persistState();
+
+  return APP_STATE[key];
 
 }
 
 function resetState() {
 
-  APP_STATE =
-    structuredClone(
-      DEFAULT_STATE
-    );
+  APP_STATE.products = [];
 
-  saveState();
+  APP_STATE.ingredients = [];
+
+  APP_STATE.sales = [];
+
+  APP_STATE.cart = [];
+
+  APP_STATE.heldOrders = [];
+
+  APP_STATE.categories = [
+    'Cookies',
+    'Chewy Cookies',
+    'Drinks'
+  ];
+
+  persistState();
 
 }
 
@@ -144,9 +78,6 @@ window.APP_STATE =
 
 window.updateState =
   updateState;
-
-window.saveState =
-  saveState;
 
 window.resetState =
   resetState;
