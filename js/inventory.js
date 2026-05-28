@@ -1,9 +1,3 @@
-function getInventoryItems() {
-
-  return APP_STATE.ingredients || [];
-
-}
-
 function renderInventoryTable() {
 
   const tableBody =
@@ -11,24 +5,26 @@ function renderInventoryTable() {
       '#inventoryTable tbody'
     );
 
-  if (!tableBody) return;
+  if (!tableBody)
+    return;
 
-  tableBody.innerHTML = '';
+  const ingredients =
+    getIngredients();
 
-  const inventory =
-    getInventoryItems();
+  tableBody.innerHTML =
+    '';
 
-  if (!inventory.length) {
+  if (!ingredients.length) {
 
     tableBody.innerHTML = `
 
       <tr>
 
         <td
-          colspan="7"
-          class="empty-state centered-empty-state">
+          colspan="8"
+          class="empty-state">
 
-          No inventory items found
+          No inventory found
 
         </td>
 
@@ -40,229 +36,206 @@ function renderInventoryTable() {
 
   }
 
-  inventory.forEach(item => {
+  ingredients.forEach(
+    ingredient => {
 
-    const stock =
-      Number(item.stock || 0);
+      const stock =
+        Number(
+          ingredient.stock || 0
+        );
 
-    const reorderLevel =
-      Number(
-        item.reorderLevel || 0
-      );
+      const reorderLevel =
+        Number(
+          ingredient.reorderLevel || 0
+        );
 
-    const row =
-      document.createElement(
-        'tr'
-      );
+      const lowStock =
+        stock <= reorderLevel;
 
-    if (
-      stock <= reorderLevel
-    ) {
+      const row =
+        document.createElement(
+          'tr'
+        );
 
-      row.classList.add(
-        'low-stock-row'
-      );
+      if (lowStock) {
 
-    }
+        row.classList.add(
+          'low-stock-row'
+        );
 
-    row.innerHTML = `
+      }
 
-      <td>
+      row.innerHTML = `
 
-        ${item.name || '-'}
+        <td>
 
-      </td>
+          ${ingredient.name}
 
-      <td>
+        </td>
 
-        ${item.unit || 'g'}
+        <td>
 
-      </td>
+          ${ingredient.unit}
 
-      <td>
+        </td>
 
-        ${Number(
-          item.packageQty || 0
-        )}
+        <td>
 
-      </td>
+          ${ingredient.packageQuantity}
 
-      <td>
+        </td>
 
-        ${formatCurrency(
-          Number(
-            item.packageCost || 0
-          )
-        )}
+        <td>
 
-      </td>
+          ${formatCurrency(
+            ingredient.packageCost
+          )}
 
-      <td>
+        </td>
 
-        ${stock}
+        <td>
 
-      </td>
+          ${stock}
 
-      <td>
+        </td>
 
-        ${reorderLevel}
+        <td>
 
-      </td>
+          ${reorderLevel}
 
-      <td>
+        </td>
 
-        ${
-          stock <= reorderLevel
+        <td>
+
+          ${lowStock
 
             ? `
-              <span class="stock-alert-badge">
-                LOW STOCK
+              <span class="badge-low-stock">
+                Low Stock
               </span>
             `
 
             : `
-              <span class="stock-ok-badge">
+              <span class="badge dark">
                 OK
               </span>
             `
-        }
+          }
 
-      </td>
+        </td>
 
-    `;
+        <td>
 
-    tableBody.appendChild(row);
+          <div class="table-actions">
 
-  });
+            <button
+              class="btn btn-sm"
+              onclick="restockIngredient('${ingredient.id}')">
+
+              Restock
+
+            </button>
+
+          </div>
+
+        </td>
+
+      `;
+
+      tableBody.appendChild(
+        row
+      );
+
+    }
+  );
 
 }
 
 function restockIngredient(
-  ingredientId,
-  quantity
+  ingredientId
 ) {
 
-  const ingredients =
-    getInventoryItems().map(
-      ingredient => {
+  const ingredient =
+    getIngredients().find(
+      item =>
+
+        String(item.id)
+        ===
+        String(ingredientId)
+    );
+
+  if (!ingredient)
+    return;
+
+  const quantity =
+    prompt(
+      `Add stock for ${ingredient.name}`
+    );
+
+  if (
+    quantity === null
+  ) {
+    return;
+  }
+
+  const amount =
+    safeNumber(
+      quantity
+    );
+
+  if (
+    amount <= 0
+  ) {
+
+    showNotification(
+      'Invalid quantity',
+      'error'
+    );
+
+    return;
+
+  }
+
+  const updated =
+    getIngredients().map(
+      item => {
 
         if (
-
-          String(ingredient.id)
+          String(item.id)
           !==
           String(ingredientId)
-
         ) {
 
-          return ingredient;
+          return item;
 
         }
 
         return {
 
-          ...ingredient,
+          ...item,
 
           stock:
 
             Number(
-              ingredient.stock || 0
+              item.stock || 0
             )
 
             +
 
-            Number(quantity || 0),
-
-          updatedAt:
-            new Date().toISOString()
+            amount
 
         };
 
       }
     );
 
-  updateState(
-    'ingredients',
-    () => ingredients
+  setIngredients(
+    updated
   );
 
-  renderInventoryTable();
-
-  renderIngredientsTable();
-
-}
-
-function reduceIngredientStock(
-  ingredientId,
-  quantity
-) {
-
-  const ingredients =
-    getInventoryItems().map(
-      ingredient => {
-
-        if (
-
-          String(ingredient.id)
-          !==
-          String(ingredientId)
-
-        ) {
-
-          return ingredient;
-
-        }
-
-        return {
-
-          ...ingredient,
-
-          stock: Math.max(
-
-            0,
-
-            Number(
-              ingredient.stock || 0
-            )
-
-            -
-
-            Number(quantity || 0)
-
-          ),
-
-          updatedAt:
-            new Date().toISOString()
-
-        };
-
-      }
-    );
-
-  updateState(
-    'ingredients',
-    () => ingredients
-  );
-
-  renderInventoryTable();
-
-  renderIngredientsTable();
-
-}
-
-function getLowStockIngredients() {
-
-  return getInventoryItems().filter(
-    ingredient =>
-
-      Number(
-        ingredient.stock || 0
-      )
-
-      <=
-
-      Number(
-        ingredient.reorderLevel || 0
-      )
+  showNotification(
+    'Ingredient restocked',
+    'success'
   );
 
 }
@@ -271,21 +244,37 @@ function renderLowStockAlerts() {
 
   const container =
     document.getElementById(
-      'lowStockAlerts'
+      'lowStockContainer'
     );
 
-  if (!container) return;
+  if (!container)
+    return;
 
-  const alerts =
-    getLowStockIngredients();
+  const lowStockItems =
+    getIngredients().filter(
+      ingredient =>
 
-  container.innerHTML = '';
+        Number(
+          ingredient.stock || 0
+        )
 
-  if (!alerts.length) {
+        <=
+
+        Number(
+          ingredient.reorderLevel || 0
+        )
+    );
+
+  container.innerHTML =
+    '';
+
+  if (
+    !lowStockItems.length
+  ) {
 
     container.innerHTML = `
 
-      <div class="empty-state centered-empty-state">
+      <div class="empty-state">
 
         No low stock alerts
 
@@ -297,76 +286,48 @@ function renderLowStockAlerts() {
 
   }
 
-  alerts.forEach(item => {
+  lowStockItems.forEach(
+    ingredient => {
 
-    const alert =
-      document.createElement(
-        'div'
+      const card =
+        document.createElement(
+          'div'
+        );
+
+      card.className =
+        'low-stock-card';
+
+      card.innerHTML = `
+
+        <div class="low-stock-name">
+
+          ${ingredient.name}
+
+        </div>
+
+        <div class="low-stock-meta">
+
+          ${ingredient.stock}
+          ${ingredient.unit} left
+
+        </div>
+
+      `;
+
+      container.appendChild(
+        card
       );
 
-    alert.className =
-      'inventory-alert-item';
-
-    alert.innerHTML = `
-
-      <div class="inventory-alert-left">
-
-        <div class="inventory-alert-name">
-
-          ${item.name}
-
-        </div>
-
-        <div class="inventory-alert-meta">
-
-          ${item.stock}
-          ${item.unit || 'g'}
-          remaining
-
-        </div>
-
-      </div>
-
-      <div class="inventory-alert-right">
-
-        Reorder at
-        ${item.reorderLevel}
-
-      </div>
-
-    `;
-
-    container.appendChild(alert);
-
-  });
+    }
+  );
 
 }
-
-document.addEventListener(
-  'DOMContentLoaded',
-  () => {
-
-    renderInventoryTable();
-
-    renderLowStockAlerts();
-
-  }
-);
-
-window.getInventoryItems =
-  getInventoryItems;
 
 window.renderInventoryTable =
   renderInventoryTable;
 
-window.restockIngredient =
-  restockIngredient;
-
-window.reduceIngredientStock =
-  reduceIngredientStock;
-
-window.getLowStockIngredients =
-  getLowStockIngredients;
-
 window.renderLowStockAlerts =
   renderLowStockAlerts;
+
+window.restockIngredient =
+  restockIngredient;
