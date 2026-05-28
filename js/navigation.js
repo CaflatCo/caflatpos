@@ -1,28 +1,41 @@
-function initializeSidebar() {
+function initializeNavigation() {
 
-  const sidebarToggle =
-    document.getElementById(
-      'sidebarToggle'
+  bindSidebarNavigation();
+
+  bindMobileNavigation();
+
+}
+
+function bindSidebarNavigation() {
+
+  const buttons =
+    document.querySelectorAll(
+      '[data-view], [data-page]'
     );
 
-  const sidebar =
-    document.getElementById(
-      'sidebar'
-    );
+  buttons.forEach(
+    button => {
 
-  if (
-    !sidebarToggle ||
-    !sidebar
-  ) {
-    return;
-  }
+      button.addEventListener(
+        'click',
+        () => {
 
-  sidebarToggle.addEventListener(
-    'click',
-    () => {
+          const target =
 
-      sidebar.classList.toggle(
-        'collapsed'
+            button.dataset.view ||
+
+            button.dataset.page ||
+
+            '';
+
+          if (!target)
+            return;
+
+          switchPage(
+            target
+          );
+
+        }
       );
 
     }
@@ -30,65 +43,39 @@ function initializeSidebar() {
 
 }
 
-function initializeTabs() {
+function bindMobileNavigation() {
 
-  const tabButtons =
-    document.querySelectorAll(
-      '.tab-btn'
+  const toggle =
+    document.getElementById(
+      'mobileSidebarToggle'
     );
 
-  tabButtons.forEach(button => {
+  const sidebar =
+    document.getElementById(
+      'sidebar'
+    );
 
-    button.addEventListener(
+  const overlay =
+    document.getElementById(
+      'mobileSidebarOverlay'
+    );
+
+  if (
+    toggle &&
+    sidebar
+  ) {
+
+    toggle.addEventListener(
       'click',
       () => {
 
-        const target =
-          button.dataset.tab;
-
-        const parent =
-          button.closest(
-            '.tab-container'
-          );
-
-        if (!parent) return;
-
-        parent
-          .querySelectorAll(
-            '.tab-btn'
-          )
-          .forEach(btn => {
-
-            btn.classList.remove(
-              'active'
-            );
-
-          });
-
-        parent
-          .querySelectorAll(
-            '.tab-panel'
-          )
-          .forEach(panel => {
-
-            panel.classList.remove(
-              'active'
-            );
-
-          });
-
-        button.classList.add(
-          'active'
+        sidebar.classList.toggle(
+          'mobile-open'
         );
 
-        const panel =
-          parent.querySelector(
-            `[data-tab-panel="${target}"]`
-          );
+        if (overlay) {
 
-        if (panel) {
-
-          panel.classList.add(
+          overlay.classList.toggle(
             'active'
           );
 
@@ -97,57 +84,36 @@ function initializeTabs() {
       }
     );
 
-  });
+  }
 
-}
-
-function initializeResponsivePOS() {
-
-  const mediaQuery =
-    window.matchMedia(
-      '(max-width: 1024px)'
-    );
-
-  function applyResponsiveMode(
-    event
+  if (
+    overlay &&
+    sidebar
   ) {
 
-    document.body.classList.toggle(
-      'mobile-pos',
-      event.matches
+    overlay.addEventListener(
+      'click',
+      () => {
+
+        sidebar.classList.remove(
+          'mobile-open'
+        );
+
+        overlay.classList.remove(
+          'active'
+        );
+
+      }
     );
 
   }
-
-  applyResponsiveMode(
-    mediaQuery
-  );
-
-  mediaQuery.addEventListener(
-    'change',
-    applyResponsiveMode
-  );
 
 }
 
 document.addEventListener(
   'DOMContentLoaded',
-  () => {
-
-    initializeSidebar();
-
-    initializeTabs();
-
-    initializeResponsivePOS();
-
-  }
+  initializeNavigation
 );
 
-window.initializeSidebar =
-  initializeSidebar;
-
-window.initializeTabs =
-  initializeTabs;
-
-window.initializeResponsivePOS =
-  initializeResponsivePOS;
+window.initializeNavigation =
+  initializeNavigation;
