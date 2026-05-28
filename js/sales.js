@@ -4,7 +4,9 @@ function getCart() {
 
 }
 
-function setCart(cart) {
+function setCart(
+  cart
+) {
 
   updateState(
     'cart',
@@ -51,6 +53,7 @@ function getCartQuantityForProduct(
       (sum, item) =>
 
         sum +
+
         Number(
           item.quantity || 0
         ),
@@ -485,16 +488,7 @@ function addToCart(
 
           ? product.recipe
 
-          : [],
-
-      recipeMode:
-        product.recipeMode ||
-        'unit',
-
-      batchYield:
-        Number(
-          product.batchYield || 1
-        )
+          : []
 
     });
 
@@ -504,337 +498,29 @@ function addToCart(
 
 }
 
-function removeFromCart(
-  cartItemId
-) {
+window.getCart =
+  getCart;
 
-  const updated =
-    getCart().filter(
-      item =>
+window.setCart =
+  setCart;
 
-        String(item.id)
-        !==
-        String(cartItemId)
-    );
+window.addToCart =
+  addToCart;
 
-  setCart(updated);
+window.calculateChange =
+  calculateChange;
 
-}
+window.calculateCartTotal =
+  calculateCartTotal;
 
-function increaseQty(
-  cartItemId
-) {
+window.calculateCartSubtotal =
+  calculateCartSubtotal;
 
-  const cart =
-    getCart();
+window.calculateCartDiscount =
+  calculateCartDiscount;
 
-  const item =
-    cart.find(
-      i =>
+window.calculateCartTax =
+  calculateCartTax;
 
-        String(i.id)
-        ===
-        String(cartItemId)
-    );
-
-  if (!item) return;
-
-  const product =
-    getProductById(
-      item.productId
-    );
-
-  if (!product) return;
-
-  const totalQty =
-    getCartQuantityForProduct(
-      item.productId
-    );
-
-  if (
-    totalQty >=
-    Number(
-      product.stock || 0
-    )
-  ) {
-
-    showNotification(
-      'Insufficient stock',
-      'error'
-    );
-
-    return;
-
-  }
-
-  item.quantity += 1;
-
-  setCart(cart);
-
-}
-
-function decreaseQty(
-  cartItemId
-) {
-
-  let cart =
-    getCart();
-
-  const item =
-    cart.find(
-      i =>
-
-        String(i.id)
-        ===
-        String(cartItemId)
-    );
-
-  if (!item) return;
-
-  item.quantity -= 1;
-
-  if (
-    item.quantity <= 0
-  ) {
-
-    cart =
-      cart.filter(
-        i =>
-
-          String(i.id)
-          !==
-          String(cartItemId)
-      );
-
-  }
-
-  setCart(cart);
-
-}
-
-function clearCart() {
-
-  const cart =
-    getCart();
-
-  if (!cart.length) {
-
-    setCart([]);
-
-    return;
-
-  }
-
-  const confirmed =
-    confirm(
-      'Clear current order?'
-    );
-
-  if (!confirmed)
-    return;
-
-  setCart([]);
-
-  showNotification(
-    'Cart cleared',
-    'success'
-  );
-
-}
-
-function holdOrder() {
-
-  const cart =
-    getCart();
-
-  if (!cart.length) {
-
-    showNotification(
-      'Cart is empty',
-      'error'
-    );
-
-    return;
-
-  }
-
-  const heldOrders =
-
-    Array.isArray(
-      APP_STATE.heldOrders
-    )
-
-      ? APP_STATE.heldOrders
-
-      : [];
-
-  heldOrders.push({
-
-    id:
-      generateId(),
-
-    items:
-      cart.map(
-        item => ({
-          ...item
-        })
-      ),
-
-    createdAt:
-      new Date()
-        .toISOString()
-
-  });
-
-  updateState(
-    'heldOrders',
-    () => heldOrders
-  );
-
-  setCart([]);
-
-  showNotification(
-    'Order held',
-    'success'
-  );
-
-}
-
-function renderCart() {
-
-  const container =
-    document.getElementById(
-      'cartItems'
-    );
-
-  if (!container)
-    return;
-
-  const cart =
-    getCart();
-
-  container.innerHTML =
-    '';
-
-  if (!cart.length) {
-
-    container.innerHTML = `
-
-      <div class="empty-cart-state">
-
-        <div class="empty-cart-icon">
-          🛒
-        </div>
-
-        <div class="empty-cart-title">
-          No items yet
-        </div>
-
-        <div class="empty-cart-subtitle">
-          Products added will appear here
-        </div>
-
-      </div>
-
-    `;
-
-    updateCartSummary();
-
-    return;
-
-  }
-
-  cart.forEach(item => {
-
-    const row =
-      document.createElement(
-        'div'
-      );
-
-    row.className =
-      'cart-line-item';
-
-    row.innerHTML = `
-
-      <div class="cart-line-info">
-
-        <div class="cart-line-name">
-
-          ${item.name}
-
-        </div>
-
-        <div class="cart-line-price">
-
-          ${formatCurrency(
-            item.price
-          )}
-
-        </div>
-
-      </div>
-
-      <div class="cart-line-controls">
-
-        <button
-          type="button"
-          onclick="decreaseQty('${item.id}')">
-
-          −
-
-        </button>
-
-        <span>
-
-          ${item.quantity}
-
-        </span>
-
-        <button
-          type="button"
-          onclick="increaseQty('${item.id}')">
-
-          +
-
-        </button>
-
-      </div>
-
-      <div class="cart-line-total">
-
-        ${formatCurrency(
-
-          Number(
-            item.price || 0
-          )
-
-          *
-
-          Number(
-            item.quantity || 0
-          )
-
-        )}
-
-      </div>
-
-      <button
-        type="button"
-        class="cart-remove-btn"
-        onclick="removeFromCart('${item.id}')">
-
-        ×
-
-      </button>
-
-    `;
-
-    container.appendChild(
-      row
-    );
-
-  });
-
-  updateCartSummary();
-
-}
+window.updateCartSummary =
+  updateCartSummary;
