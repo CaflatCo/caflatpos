@@ -1,125 +1,22 @@
-function getCategoryList() {
+function getCategories() {
 
-  const stored =
+  return Array.isArray(
+    APP_STATE.categories
+  )
 
-    Array.isArray(
-      APP_STATE.categories
-    )
+    ? APP_STATE.categories
 
-      ? APP_STATE.categories
-
-      : [];
-
-  const fromProducts =
-
-    (APP_STATE.products || [])
-
-      .map(product =>
-
-        String(
-          product.category || ''
-        ).trim()
-
-      )
-
-      .filter(Boolean);
-
-  return [
-
-    ...new Set([
-
-      ...stored,
-      ...fromProducts
-
-    ])
-
-  ];
+    : [];
 
 }
 
-function renderCategories() {
-
-  const list =
-    document.getElementById(
-      'categoryList'
-    );
-
-  if (!list) return;
-
-  const categories =
-
-    Array.isArray(
-      APP_STATE.categories
-    )
-
-      ? APP_STATE.categories
-
-      : [];
-
-  list.innerHTML = '';
-
-  if (!categories.length) {
-
-    list.innerHTML = `
-
-      <div class="empty-state centered-empty-state">
-        No categories yet
-      </div>
-
-    `;
-
-    return;
-
-  }
-
-  categories.forEach(category => {
-
-    const item =
-      document.createElement(
-        'div'
-      );
-
-    item.className =
-      'settings-row';
-
-    item.innerHTML = `
-
-      <span>
-        ${category}
-      </span>
-
-      <button
-        class="btn btn-sm"
-        type="button"
-        onclick="deleteCategory('${category}')">
-
-        Delete
-
-      </button>
-
-    `;
-
-    list.appendChild(item);
-
-  });
-
-}
-
-function deleteCategory(name) {
-
-  const updated =
-
-    (
-      APP_STATE.categories || []
-    ).filter(category =>
-
-      category !== name
-
-    );
+function setCategories(
+  categories
+) {
 
   updateState(
     'categories',
-    () => updated
+    () => categories
   );
 
   renderCategories();
@@ -128,304 +25,456 @@ function deleteCategory(name) {
 
 }
 
-function renderCategoryOptions() {
+function addCategory() {
+
+  const input =
+    document.getElementById(
+      'newCategoryInput'
+    );
+
+  if (!input)
+    return;
+
+  const value =
+    sanitizeText(
+      input.value
+    );
+
+  if (!value) {
+
+    showNotification(
+      'Category name is required',
+      'error'
+    );
+
+    return;
+
+  }
 
   const categories =
-    getCategoryList();
+    getCategories();
 
-  const productSelect =
-    document.getElementById(
-      'productCategory'
+  const exists =
+    categories.some(
+      category =>
+
+        category
+          .toLowerCase()
+
+        ===
+
+        value
+          .toLowerCase()
     );
 
-  const filterSelect =
-    document.getElementById(
-      'productCategoryFilter'
+  if (exists) {
+
+    showNotification(
+      'Category already exists',
+      'error'
     );
 
-  if (productSelect) {
-
-    const current =
-      productSelect.value;
-
-    productSelect.innerHTML = `
-
-      <option value="">
-        Select category
-      </option>
-
-    `;
-
-    categories.forEach(category => {
-
-      const option =
-        document.createElement(
-          'option'
-        );
-
-      option.value =
-        category;
-
-      option.textContent =
-        category;
-
-      productSelect.appendChild(
-        option
-      );
-
-    });
-
-    if (
-      categories.includes(current)
-    ) {
-
-      productSelect.value =
-        current;
-
-    }
+    return;
 
   }
 
-  if (filterSelect) {
-
-    const current =
-      filterSelect.value;
-
-    filterSelect.innerHTML = `
-
-      <option value="">
-        All Categories
-      </option>
-
-    `;
-
-    categories.forEach(category => {
-
-      const option =
-        document.createElement(
-          'option'
-        );
-
-      option.value =
-        category;
-
-      option.textContent =
-        category;
-
-      filterSelect.appendChild(
-        option
-      );
-
-    });
-
-    if (
-      categories.includes(current)
-    ) {
-
-      filterSelect.value =
-        current;
-
-    }
-
-  }
-
-}
-
-function addRecipeRow(data = {}) {
-
-  const builder =
-    document.getElementById(
-      'recipeBuilder'
-    );
-
-  if (!builder) return;
-
-  const row =
-    document.createElement(
-      'div'
-    );
-
-  row.className =
-    'recipe-row form-row';
-
-  row.style.marginBottom =
-    '12px';
-
-  const ingredients =
-
-    Array.isArray(
-      APP_STATE.ingredients
-    )
-
-      ? APP_STATE.ingredients
-
-      : [];
-
-  const optionsHtml =
-
-    ingredients.length
-
-      ? ingredients.map(
-          ingredient => `
-
-            <option
-              value="${ingredient.id}"
-
-              ${
-                String(
-                  data.ingredientId || ''
-                )
-                ===
-                String(ingredient.id)
-
-                  ? 'selected'
-
-                  : ''
-              }>
-
-              ${ingredient.name || '-'}
-              (${ingredient.unit || 'g'})
-
-            </option>
-
-          `
-        ).join('')
-
-      : `
-          <option value="">
-            No ingredients available
-          </option>
-        `;
-
-  row.innerHTML = `
-
-    <div class="form-group">
-
-      <label>
-        Ingredient
-      </label>
-
-      <select class="recipe-ingredient">
-
-        <option value="">
-          Select ingredient
-        </option>
-
-        ${optionsHtml}
-
-      </select>
-
-    </div>
-
-    <div class="form-group">
-
-      <label>
-        Quantity
-      </label>
-
-      <input
-        type="number"
-        class="recipe-qty"
-        placeholder="Quantity"
-        min="0"
-        step="0.01"
-        value="${data.quantity || 0}"
-      />
-
-    </div>
-
-    <div class="form-group">
-
-      <label>&nbsp;</label>
-
-      <button
-        type="button"
-        class="btn btn-secondary remove-recipe-btn">
-
-        Remove
-
-      </button>
-
-    </div>
-
-  `;
-
-  row.querySelector(
-    '.remove-recipe-btn'
-  ).addEventListener(
-    'click',
-    () => row.remove()
+  categories.push(
+    value
   );
 
-  builder.appendChild(row);
+  setCategories(
+    categories
+  );
+
+  input.value = '';
+
+  showNotification(
+    'Category added',
+    'success'
+  );
 
 }
 
-function toggleRecipeMode() {
+function deleteCategory(
+  categoryName
+) {
 
-  const recipeMode =
-    document.getElementById(
-      'recipeMode'
+  const confirmed =
+    confirm(
+      `Delete ${categoryName}?`
     );
 
-  const batchYieldWrap =
-    document.getElementById(
-      'batchYieldWrap'
-    );
-
-  if (
-    !recipeMode ||
-    !batchYieldWrap
-  ) {
+  if (!confirmed)
     return;
-  }
 
-  if (
-    recipeMode.value ===
-    'batch'
-  ) {
+  const filtered =
+    getCategories().filter(
+      category =>
 
-    batchYieldWrap.style.display =
-      'block';
+        category !==
+        categoryName
+    );
 
-  } else {
+  setCategories(
+    filtered
+  );
 
-    batchYieldWrap.style.display =
-      'none';
-
-  }
+  showNotification(
+    'Category deleted',
+    'success'
+  );
 
 }
 
-document.addEventListener(
-  'DOMContentLoaded',
-  () => {
+function renderCategories() {
 
-    renderCategories();
+  const container =
+    document.getElementById(
+      'categoryList'
+    );
 
-    renderCategoryOptions();
+  if (!container)
+    return;
 
-    toggleRecipeMode();
+  const categories =
+    getCategories();
 
-    const recipeMode =
-      document.getElementById(
-        'recipeMode'
-      );
+  container.innerHTML =
+    '';
 
-    if (recipeMode) {
+  categories.forEach(
+    category => {
 
-      recipeMode.addEventListener(
-        'change',
-        toggleRecipeMode
+      const item =
+        document.createElement(
+          'div'
+        );
+
+      item.className =
+        'category-chip';
+
+      item.innerHTML = `
+
+        <span>
+
+          ${category}
+
+        </span>
+
+        <button
+          type="button"
+          onclick="deleteCategory('${category}')">
+
+          ×
+
+        </button>
+
+      `;
+
+      container.appendChild(
+        item
       );
 
     }
+  );
+
+}
+
+function renderCategoryOptions() {
+
+  const selects =
+    document.querySelectorAll(
+      '#productCategory, #productCategoryFilter'
+    );
+
+  const categories =
+    getCategories();
+
+  selects.forEach(
+    select => {
+
+      const current =
+        select.value;
+
+      const isFilter =
+        select.id ===
+        'productCategoryFilter';
+
+      select.innerHTML = '';
+
+      if (isFilter) {
+
+        const allOption =
+          document.createElement(
+            'option'
+          );
+
+        allOption.value =
+          'All';
+
+        allOption.textContent =
+          'All Categories';
+
+        select.appendChild(
+          allOption
+        );
+
+      } else {
+
+        const placeholder =
+          document.createElement(
+            'option'
+          );
+
+        placeholder.value =
+          '';
+
+        placeholder.textContent =
+          'Select Category';
+
+        select.appendChild(
+          placeholder
+        );
+
+      }
+
+      categories.forEach(
+        category => {
+
+          const option =
+            document.createElement(
+              'option'
+            );
+
+          option.value =
+            category;
+
+          option.textContent =
+            category;
+
+          if (
+            current ===
+            category
+          ) {
+
+            option.selected =
+              true;
+
+          }
+
+          select.appendChild(
+            option
+          );
+
+        }
+      );
+
+    }
+  );
+
+}
+
+function saveSettings() {
+
+  const brandName =
+    sanitizeText(
+      getElementValue(
+        'settingsBrandName'
+      )
+    );
+
+  const taxRate =
+    safeNumber(
+      getElementValue(
+        'settingsTaxRate'
+      )
+    );
+
+  const receiptFooter =
+    sanitizeText(
+      getElementValue(
+        'settingsReceiptFooter'
+      )
+    );
+
+  updateState(
+    'settings',
+    current => ({
+
+      ...current,
+
+      brandName:
+        brandName ||
+
+        current.brandName,
+
+      taxRate,
+
+      receiptFooter
+
+    })
+  );
+
+  renderBranding();
+
+  showNotification(
+    'Settings saved',
+    'success'
+  );
+
+}
+
+function renderBranding() {
+
+  const brandTargets =
+    document.querySelectorAll(
+      '[data-brand-name]'
+    );
+
+  const brandName =
+    APP_STATE.settings
+      ?.brandName ||
+
+    'Caflat.CoPOS v1';
+
+  brandTargets.forEach(
+    target => {
+
+      target.textContent =
+        brandName;
+
+    }
+  );
+
+  const brandInput =
+    document.getElementById(
+      'settingsBrandName'
+    );
+
+  if (brandInput) {
+
+    brandInput.value =
+      brandName;
 
   }
-);
 
-window.getCategoryList =
-  getCategoryList;
+  const taxInput =
+    document.getElementById(
+      'settingsTaxRate'
+    );
+
+  if (taxInput) {
+
+    taxInput.value =
+      APP_STATE.settings
+        ?.taxRate || 0;
+
+  }
+
+  const footerInput =
+    document.getElementById(
+      'settingsReceiptFooter'
+    );
+
+  if (footerInput) {
+
+    footerInput.value =
+      APP_STATE.settings
+        ?.receiptFooter || '';
+
+  }
+
+}
+
+function loadDemoData() {
+
+  const confirmed =
+    confirm(
+      'Load demo data?'
+    );
+
+  if (!confirmed)
+    return;
+
+  APP_STATE.products = [
+
+    {
+      id: generateId(),
+      name: 'Classic Choco Chip',
+      category: 'Cookies',
+      description:
+        'Premium chocolate chip cookie',
+      price: 65,
+      stock: 25,
+      reorderLevel: 5,
+      variants: [],
+      recipe: []
+    },
+
+    {
+      id: generateId(),
+      name: 'Dubai Chewy Cookie',
+      category: 'Chewy Cookies',
+      description:
+        'Premium pistachio chewy cookie',
+      price: 140,
+      stock: 15,
+      reorderLevel: 5,
+      variants: []
+    }
+
+  ];
+
+  APP_STATE.ingredients = [
+
+    {
+      id: generateId(),
+      name: 'Butter',
+      unit: 'g',
+      stock: 5000,
+      reorderLevel: 1000,
+      packageQuantity: 5000,
+      packageCost: 1200,
+      costPerUnit: 0.24
+    },
+
+    {
+      id: generateId(),
+      name: 'Chocolate Chips',
+      unit: 'g',
+      stock: 3000,
+      reorderLevel: 500,
+      packageQuantity: 3000,
+      packageCost: 850,
+      costPerUnit: 0.28
+    }
+
+  ];
+
+  APP_STATE.sales = [];
+
+  persistState();
+
+  renderEverything();
+
+  showNotification(
+    'Demo data loaded',
+    'success'
+  );
+
+}
+
+window.getCategories =
+  getCategories;
+
+window.setCategories =
+  setCategories;
+
+window.addCategory =
+  addCategory;
+
+window.deleteCategory =
+  deleteCategory;
 
 window.renderCategories =
   renderCategories;
@@ -433,11 +482,11 @@ window.renderCategories =
 window.renderCategoryOptions =
   renderCategoryOptions;
 
-window.deleteCategory =
-  deleteCategory;
+window.saveSettings =
+  saveSettings;
 
-window.addRecipeRow =
-  addRecipeRow;
+window.renderBranding =
+  renderBranding;
 
-window.toggleRecipeMode =
-  toggleRecipeMode;
+window.loadDemoData =
+  loadDemoData;
