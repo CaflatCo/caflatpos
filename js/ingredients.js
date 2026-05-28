@@ -1,9 +1,12 @@
-let editingIngredientId =
-  null;
-
 function getIngredients() {
 
-  return APP_STATE.ingredients || [];
+  return Array.isArray(
+    APP_STATE.ingredients
+  )
+
+    ? APP_STATE.ingredients
+
+    : [];
 
 }
 
@@ -20,75 +23,231 @@ function setIngredients(
 
   renderIngredientDropdowns();
 
-}
+  renderInventoryTable();
 
-function calculateUnitCost(
-  ingredient
-) {
-
-  const qty =
-    Number(
-      ingredient.packageQty || 0
-    );
-
-  const cost =
-    Number(
-      ingredient.packageCost || 0
-    );
-
-  return qty > 0
-
-    ? cost / qty
-
-    : 0;
+  refreshDashboard();
 
 }
 
-function resetIngredientForm() {
+function getIngredientFormData() {
 
-  const fields = [
+  return {
 
-    'ingredientId',
-    'ingredientName',
-    'ingredientPackageQty',
-    'ingredientPurchaseCost',
-    'ingredientStock',
-    'ingredientReorder'
+    id:
+      getElementValue(
+        'ingredientId'
+      ) || generateId(),
 
-  ];
+    name:
+      sanitizeText(
+        getElementValue(
+          'ingredientName'
+        )
+      ),
 
-  fields.forEach(id => {
+    unit:
+      sanitizeText(
+        getElementValue(
+          'ingredientUnit'
+        )
+      ),
 
-    const el =
-      document.getElementById(id);
+    stock:
+      safeNumber(
+        getElementValue(
+          'ingredientStock'
+        )
+      ),
 
-    if (el) {
+    reorderLevel:
+      safeNumber(
+        getElementValue(
+          'ingredientReorderLevel'
+        )
+      ),
 
-      el.value = '';
+    packageQuantity:
+      safeNumber(
+        getElementValue(
+          'ingredientPackageQty'
+        )
+      ),
 
-    }
+    packageCost:
+      safeNumber(
+        getElementValue(
+          'ingredientPackageCost'
+        )
+      ),
 
-  });
+    costPerUnit:
+      calculateIngredientUnitCost(),
 
-  const unit =
-    document.getElementById(
-      'ingredientPurchaseUnit'
+    createdAt:
+      new Date()
+        .toISOString()
+
+  };
+
+}
+
+function calculateIngredientUnitCost() {
+
+  const packageQty =
+    safeNumber(
+      getElementValue(
+        'ingredientPackageQty'
+      )
     );
 
-  if (unit) {
+  const packageCost =
+    safeNumber(
+      getElementValue(
+        'ingredientPackageCost'
+      )
+    );
 
-    unit.value = 'g';
+  if (
+    packageQty <= 0
+  ) {
+
+    return 0;
 
   }
 
-  editingIngredientId =
-    null;
+  return (
+    packageCost /
+    packageQty
+  );
 
 }
 
-function openIngredientModal() {
+function saveIngredient() {
 
-  resetIngredientForm();
+  const data =
+    getIngredientFormData();
+
+  if (!data.name) {
+
+    showNotification(
+      'Ingredient name is required',
+      'error'
+    );
+
+    return;
+
+  }
+
+  const ingredients =
+    getIngredients();
+
+  const existingIndex =
+    ingredients.findIndex(
+      ingredient =>
+
+        String(ingredient.id)
+        ===
+        String(data.id)
+    );
+
+  if (
+    existingIndex >= 0
+  ) {
+
+    ingredients[
+      existingIndex
+    ] = data;
+
+  } else {
+
+    ingredients.push(
+      data
+    );
+
+  }
+
+  setIngredients(
+    ingredients
+  );
+
+  closeModal(
+    'ingredientModal'
+  );
+
+  clearIngredientForm();
+
+  showNotification(
+    'Ingredient saved successfully',
+    'success'
+  );
+
+}
+
+function clearIngredientForm() {
+
+  setElementValue(
+    'ingredientId',
+    ''
+  );
+
+  setElementValue(
+    'ingredientName',
+    ''
+  );
+
+  setElementValue(
+    'ingredientUnit',
+    ''
+  );
+
+  setElementValue(
+    'ingredientStock',
+    ''
+  );
+
+  setElementValue(
+    'ingredientReorderLevel',
+    ''
+  );
+
+  setElementValue(
+    'ingredientPackageQty',
+    ''
+  );
+
+  setElementValue(
+    'ingredientPackageCost',
+    ''
+  );
+
+}
+
+function openIngredientModal(
+  ingredientId = null
+) {
+
+  clearIngredientForm();
+
+  if (ingredientId) {
+
+    const ingredient =
+      getIngredients().find(
+        item =>
+
+          String(item.id)
+          ===
+          String(ingredientId)
+      );
+
+    if (ingredient) {
+
+      hydrateIngredientForm(
+        ingredient
+      );
+
+    }
+
+  }
 
   openModal(
     'ingredientModal'
@@ -96,71 +255,76 @@ function openIngredientModal() {
 
 }
 
-function renderIngredientDropdowns() {
+function hydrateIngredientForm(
+  ingredient
+) {
 
-  const ingredients =
-    getIngredients();
+  setElementValue(
+    'ingredientId',
+    ingredient.id
+  );
 
-  const selects =
-    document.querySelectorAll(
-      '.recipe-ingredient'
+  setElementValue(
+    'ingredientName',
+    ingredient.name
+  );
+
+  setElementValue(
+    'ingredientUnit',
+    ingredient.unit
+  );
+
+  setElementValue(
+    'ingredientStock',
+    ingredient.stock
+  );
+
+  setElementValue(
+    'ingredientReorderLevel',
+    ingredient.reorderLevel
+  );
+
+  setElementValue(
+    'ingredientPackageQty',
+    ingredient.packageQuantity
+  );
+
+  setElementValue(
+    'ingredientPackageCost',
+    ingredient.packageCost
+  );
+
+}
+
+function deleteIngredient(
+  ingredientId
+) {
+
+  const confirmed =
+    confirm(
+      'Delete this ingredient?'
     );
 
-  selects.forEach(select => {
+  if (!confirmed)
+    return;
 
-    const currentValue =
-      select.value;
+  const filtered =
+    getIngredients().filter(
+      ingredient =>
 
-    select.innerHTML = `
-
-      <option value="">
-        Select ingredient
-      </option>
-
-    `;
-
-    ingredients.forEach(
-      ingredient => {
-
-        const option =
-          document.createElement(
-            'option'
-          );
-
-        option.value =
-          ingredient.id;
-
-        option.textContent =
-
-          `${ingredient.name}
-          (${ingredient.unit || 'g'})`;
-
-        select.appendChild(
-          option
-        );
-
-      }
+        String(ingredient.id)
+        !==
+        String(ingredientId)
     );
 
-    if (
+  setIngredients(
+    filtered
+  );
 
-      [...select.options]
-        .some(
-          option =>
-
-            option.value
-            ===
-            currentValue
-        )
-
-    ) {
-
-      select.value =
-        currentValue;
-
-    }
-
-  });
+  showNotification(
+    'Ingredient deleted',
+    'success'
+  );
 
 }
 
@@ -171,12 +335,14 @@ function renderIngredientsTable() {
       '#ingredientsTable tbody'
     );
 
-  if (!tableBody) return;
-
-  tableBody.innerHTML = '';
+  if (!tableBody)
+    return;
 
   const ingredients =
     getIngredients();
+
+  tableBody.innerHTML =
+    '';
 
   if (!ingredients.length) {
 
@@ -186,7 +352,7 @@ function renderIngredientsTable() {
 
         <td
           colspan="8"
-          class="empty-state centered-empty-state">
+          class="empty-state">
 
           No ingredients found
 
@@ -203,19 +369,16 @@ function renderIngredientsTable() {
   ingredients.forEach(
     ingredient => {
 
-      const stock =
+      const lowStock =
+
         Number(
           ingredient.stock || 0
-        );
+        )
 
-      const reorderLevel =
+        <=
+
         Number(
           ingredient.reorderLevel || 0
-        );
-
-      const unitCost =
-        calculateUnitCost(
-          ingredient
         );
 
       const row =
@@ -223,9 +386,7 @@ function renderIngredientsTable() {
           'tr'
         );
 
-      if (
-        stock <= reorderLevel
-      ) {
+      if (lowStock) {
 
         row.classList.add(
           'low-stock-row'
@@ -236,39 +397,49 @@ function renderIngredientsTable() {
       row.innerHTML = `
 
         <td>
-          ${ingredient.name || '-'}
+
+          ${ingredient.name}
+
         </td>
 
         <td>
-          ${ingredient.unit || 'g'}
+
+          ${ingredient.unit}
+
         </td>
 
         <td>
-          ${Number(
-            ingredient.packageQty || 0
-          )}
+
+          ${ingredient.packageQuantity}
+
         </td>
 
         <td>
+
           ${formatCurrency(
-            Number(
-              ingredient.packageCost || 0
-            )
+            ingredient.packageCost
           )}
+
         </td>
 
         <td>
-          ${formatCurrency(unitCost)}
-          /
-          ${ingredient.unit || 'g'}
+
+          ${formatCurrency(
+            ingredient.costPerUnit
+          )}
+
         </td>
 
         <td>
-          ${stock}
+
+          ${ingredient.stock}
+
         </td>
 
         <td>
-          ${reorderLevel}
+
+          ${ingredient.reorderLevel}
+
         </td>
 
         <td>
@@ -277,16 +448,14 @@ function renderIngredientsTable() {
 
             <button
               class="btn btn-sm"
-              type="button"
-              onclick="editIngredient('${ingredient.id}')">
+              onclick="openIngredientModal('${ingredient.id}')">
 
               Edit
 
             </button>
 
             <button
-              class="btn btn-sm"
-              type="button"
+              class="btn btn-sm btn-secondary"
               onclick="deleteIngredient('${ingredient.id}')">
 
               Delete
@@ -308,217 +477,66 @@ function renderIngredientsTable() {
 
 }
 
-function saveIngredient() {
+function renderIngredientDropdowns() {
 
-  const name =
-    document.getElementById(
-      'ingredientName'
-    )?.value?.trim() || '';
-
-  if (!name) {
-
-    showNotification(
-      'Ingredient name is required',
-      'error'
+  const selects =
+    document.querySelectorAll(
+      '.recipe-ingredient'
     );
-
-    return;
-
-  }
 
   const ingredients =
     getIngredients();
 
-  const ingredientId =
-    document.getElementById(
-      'ingredientId'
-    )?.value || '';
+  selects.forEach(
+    select => {
 
-  const ingredient = {
+      const currentValue =
+        select.value;
 
-    id:
-      ingredientId ||
-      generateId(),
+      select.innerHTML = `
 
-    name,
+        <option value="">
+          Select Ingredient
+        </option>
 
-    unit:
-      document.getElementById(
-        'ingredientPurchaseUnit'
-      )?.value || 'g',
+      `;
 
-    packageQty:
-      Number(
-        document.getElementById(
-          'ingredientPackageQty'
-        )?.value || 0
-      ),
+      ingredients.forEach(
+        ingredient => {
 
-    packageCost:
-      Number(
-        document.getElementById(
-          'ingredientPurchaseCost'
-        )?.value || 0
-      ),
+          const option =
+            document.createElement(
+              'option'
+            );
 
-    stock:
-      Number(
-        document.getElementById(
-          'ingredientStock'
-        )?.value || 0
-      ),
+          option.value =
+            ingredient.id;
 
-    reorderLevel:
-      Number(
-        document.getElementById(
-          'ingredientReorder'
-        )?.value || 0
-      ),
+          option.textContent =
+            `${ingredient.name} (${ingredient.unit})`;
 
-    updatedAt:
-      new Date().toISOString()
+          if (
+            String(currentValue)
+            ===
+            String(ingredient.id)
+          ) {
 
-  };
+            option.selected =
+              true;
 
-  const existingIndex =
-    ingredients.findIndex(
+          }
 
-      item =>
+          select.appendChild(
+            option
+          );
 
-        String(item.id)
-        ===
-        String(ingredient.id)
+        }
+      );
 
-    );
-
-  if (existingIndex !== -1) {
-
-    ingredients[existingIndex] =
-      ingredient;
-
-  } else {
-
-    ingredients.push(
-      ingredient
-    );
-
-  }
-
-  setIngredients(
-    ingredients
-  );
-
-  closeModal(
-    'ingredientModal'
-  );
-
-  resetIngredientForm();
-
-  showNotification(
-    'Ingredient saved',
-    'success'
+    }
   );
 
 }
-
-function editIngredient(id) {
-
-  const ingredient =
-    getIngredients().find(
-
-      item =>
-
-        String(item.id)
-        ===
-        String(id)
-
-    );
-
-  if (!ingredient) return;
-
-  editingIngredientId =
-    ingredient.id;
-
-  document.getElementById(
-    'ingredientId'
-  ).value =
-    ingredient.id || '';
-
-  document.getElementById(
-    'ingredientName'
-  ).value =
-    ingredient.name || '';
-
-  document.getElementById(
-    'ingredientPurchaseUnit'
-  ).value =
-    ingredient.unit || 'g';
-
-  document.getElementById(
-    'ingredientPackageQty'
-  ).value =
-    ingredient.packageQty || '';
-
-  document.getElementById(
-    'ingredientPurchaseCost'
-  ).value =
-    ingredient.packageCost || '';
-
-  document.getElementById(
-    'ingredientStock'
-  ).value =
-    ingredient.stock || '';
-
-  document.getElementById(
-    'ingredientReorder'
-  ).value =
-    ingredient.reorderLevel || '';
-
-  openModal(
-    'ingredientModal'
-  );
-
-}
-
-function deleteIngredient(id) {
-
-  const confirmed =
-    confirm(
-      'Delete ingredient?'
-    );
-
-  if (!confirmed) return;
-
-  const updated =
-    getIngredients().filter(
-
-      item =>
-
-        String(item.id)
-        !==
-        String(id)
-
-    );
-
-  setIngredients(updated);
-
-  showNotification(
-    'Ingredient deleted',
-    'success'
-  );
-
-}
-
-document.addEventListener(
-  'DOMContentLoaded',
-  () => {
-
-    renderIngredientsTable();
-
-    renderIngredientDropdowns();
-
-  }
-);
 
 window.getIngredients =
   getIngredients;
@@ -526,26 +544,17 @@ window.getIngredients =
 window.setIngredients =
   setIngredients;
 
-window.calculateUnitCost =
-  calculateUnitCost;
+window.saveIngredient =
+  saveIngredient;
+
+window.openIngredientModal =
+  openIngredientModal;
+
+window.deleteIngredient =
+  deleteIngredient;
 
 window.renderIngredientsTable =
   renderIngredientsTable;
 
 window.renderIngredientDropdowns =
   renderIngredientDropdowns;
-
-window.saveIngredient =
-  saveIngredient;
-
-window.editIngredient =
-  editIngredient;
-
-window.deleteIngredient =
-  deleteIngredient;
-
-window.openIngredientModal =
-  openIngredientModal;
-
-window.resetIngredientForm =
-  resetIngredientForm;
