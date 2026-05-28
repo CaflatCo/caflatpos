@@ -1,52 +1,72 @@
-const STORAGE_VERSION =
-  '1.0.0';
+const STORAGE_KEY =
+  'caflat_pos_v1';
 
-function getStorageKey() {
-
-  return STORAGE_KEY;
-
-}
-
-function persistAppState() {
+function getPersistedState() {
 
   try {
 
-    const payload = {
+    const raw =
+      localStorage.getItem(
+        STORAGE_KEY
+      );
 
-      version:
-        STORAGE_VERSION,
+    if (!raw) {
+      return null;
+    }
 
-      updatedAt:
-        new Date().toISOString(),
-
-      data:
-        APP_STATE
-
-    };
-
-    localStorage.setItem(
-
-      getStorageKey(),
-
-      JSON.stringify(payload)
-
-    );
-
-    return true;
+    return JSON.parse(raw);
 
   } catch (error) {
 
     console.error(
-      'Persist state failed',
+      'Failed to load persisted state',
       error
     );
 
-    showNotification(
-      'Failed to save local data',
-      'error'
+    return null;
+
+  }
+
+}
+
+function persistState() {
+
+  try {
+
+    localStorage.setItem(
+
+      STORAGE_KEY,
+
+      JSON.stringify({
+
+        settings:
+          APP_STATE.settings,
+
+        products:
+          APP_STATE.products,
+
+        ingredients:
+          APP_STATE.ingredients,
+
+        sales:
+          APP_STATE.sales,
+
+        categories:
+          APP_STATE.categories,
+
+        heldOrders:
+          APP_STATE.heldOrders
+
+      })
+
     );
 
-    return false;
+  } catch (error) {
+
+    console.error(
+      'Failed to persist state',
+      error
+    );
 
   }
 
@@ -54,255 +74,230 @@ function persistAppState() {
 
 function restorePersistedState() {
 
-  try {
+  const persisted =
+    getPersistedState();
 
-    const raw =
-      localStorage.getItem(
-        getStorageKey()
-      );
-
-    if (!raw) {
-
-      return false;
-
-    }
-
-    const parsed =
-      JSON.parse(raw);
-
-    if (!parsed.data) {
-
-      return false;
-
-    }
-
-    APP_STATE = {
-
-      ...structuredClone(
-        DEFAULT_STATE
-      ),
-
-      ...parsed.data
-
-    };
-
-    window.APP_STATE =
-      APP_STATE;
-
-    return true;
-
-  } catch (error) {
-
-    console.error(
-      'Restore state failed',
-      error
-    );
-
-    return false;
-
+  if (!persisted) {
+    return;
   }
+
+  APP_STATE.settings =
+    persisted.settings ||
+
+    APP_STATE.settings;
+
+  APP_STATE.products =
+    Array.isArray(
+      persisted.products
+    )
+
+      ? persisted.products
+
+      : [];
+
+  APP_STATE.ingredients =
+    Array.isArray(
+      persisted.ingredients
+    )
+
+      ? persisted.ingredients
+
+      : [];
+
+  APP_STATE.sales =
+    Array.isArray(
+      persisted.sales
+    )
+
+      ? persisted.sales
+
+      : [];
+
+  APP_STATE.categories =
+    Array.isArray(
+      persisted.categories
+    )
+
+      ? persisted.categories
+
+      : APP_STATE.categories;
+
+  APP_STATE.heldOrders =
+    Array.isArray(
+      persisted.heldOrders
+    )
+
+      ? persisted.heldOrders
+
+      : [];
 
 }
 
-function exportData() {
+function exportAllData() {
 
-  try {
+  const payload = {
 
-    const payload = {
+    exportedAt:
+      new Date()
+        .toISOString(),
 
-      version:
-        STORAGE_VERSION,
+    data: {
 
-      exportedAt:
-        new Date().toISOString(),
+      settings:
+        APP_STATE.settings,
 
-      data:
-        APP_STATE
+      products:
+        APP_STATE.products,
 
-    };
+      ingredients:
+        APP_STATE.ingredients,
 
-    downloadFile(
+      sales:
+        APP_STATE.sales,
 
-      `caflatcopos-backup-${Date.now()}.json`,
+      categories:
+        APP_STATE.categories,
 
-      JSON.stringify(
-        payload,
-        null,
-        2
-      ),
+      heldOrders:
+        APP_STATE.heldOrders
 
-      'application/json'
+    }
 
+  };
+
+  const blob =
+    new Blob(
+      [
+        JSON.stringify(
+          payload,
+          null,
+          2
+        )
+      ],
+      {
+        type:
+          'application/json'
+      }
     );
 
-    showNotification(
-      'Backup exported',
-      'success'
+  const url =
+    URL.createObjectURL(
+      blob
     );
 
-  } catch (error) {
-
-    console.error(
-      'Export failed',
-      error
+  const link =
+    document.createElement(
+      'a'
     );
 
-    showNotification(
-      'Export failed',
-      'error'
-    );
+  link.href = url;
 
-  }
+  link.download =
+    `caflat-backup-${Date.now()}.json`;
+
+  document.body.appendChild(
+    link
+  );
+
+  link.click();
+
+  document.body.removeChild(
+    link
+  );
+
+  URL.revokeObjectURL(
+    url
+  );
 
 }
 
-function importData(
-  event
+function importAllData(
+  file
 ) {
 
-  const file =
-    event.target.files?.[0];
-
-  if (!file) return;
+  if (!file) {
+    return;
+  }
 
   const reader =
     new FileReader();
 
   reader.onload =
-    function(loadEvent) {
+    event => {
 
       try {
 
         const parsed =
           JSON.parse(
-            loadEvent.target.result
+            event.target.result
           );
 
-        if (!parsed.data) {
+        const data =
+          parsed.data || {};
 
-          throw new Error(
-            'Invalid backup format'
-          );
+        APP_STATE.settings =
+          data.settings ||
 
-        }
+          APP_STATE.settings;
 
-        APP_STATE = {
+        APP_STATE.products =
+          Array.isArray(
+            data.products
+          )
 
-          ...structuredClone(
-            DEFAULT_STATE
-          ),
+            ? data.products
 
-          ...parsed.data
+            : [];
 
-        };
+        APP_STATE.ingredients =
+          Array.isArray(
+            data.ingredients
+          )
 
-        window.APP_STATE =
-          APP_STATE;
+            ? data.ingredients
 
-        persistAppState();
+            : [];
+
+        APP_STATE.sales =
+          Array.isArray(
+            data.sales
+          )
+
+            ? data.sales
+
+            : [];
+
+        APP_STATE.categories =
+          Array.isArray(
+            data.categories
+          )
+
+            ? data.categories
+
+            : APP_STATE.categories;
+
+        APP_STATE.heldOrders =
+          Array.isArray(
+            data.heldOrders
+          )
+
+            ? data.heldOrders
+
+            : [];
+
+        persistState();
 
         if (
-          typeof renderProductsTable
-          ===
+          typeof renderEverything ===
           'function'
         ) {
 
-          renderProductsTable();
-
-        }
-
-        if (
-          typeof renderPOSProducts
-          ===
-          'function'
-        ) {
-
-          renderPOSProducts();
-
-        }
-
-        if (
-          typeof renderIngredientsTable
-          ===
-          'function'
-        ) {
-
-          renderIngredientsTable();
-
-        }
-
-        if (
-          typeof renderInventoryTable
-          ===
-          'function'
-        ) {
-
-          renderInventoryTable();
-
-        }
-
-        if (
-          typeof renderSalesTable
-          ===
-          'function'
-        ) {
-
-          renderSalesTable();
-
-        }
-
-        if (
-          typeof renderCategories
-          ===
-          'function'
-        ) {
-
-          renderCategories();
-
-        }
-
-        if (
-          typeof renderCategoryOptions
-          ===
-          'function'
-        ) {
-
-          renderCategoryOptions();
-
-        }
-
-        if (
-          typeof renderCart
-          ===
-          'function'
-        ) {
-
-          renderCart();
-
-        }
-
-        if (
-          typeof renderLowStockAlerts
-          ===
-          'function'
-        ) {
-
-          renderLowStockAlerts();
-
-        }
-
-        if (
-          typeof refreshDashboard
-          ===
-          'function'
-        ) {
-
-          refreshDashboard();
+          renderEverything();
 
         }
 
         showNotification(
-          'Backup restored',
+          'Backup imported successfully',
           'success'
         );
 
@@ -326,14 +321,14 @@ function importData(
 
 }
 
-window.persistAppState =
-  persistAppState;
+window.persistState =
+  persistState;
 
 window.restorePersistedState =
   restorePersistedState;
 
-window.exportData =
-  exportData;
+window.exportAllData =
+  exportAllData;
 
-window.importData =
-  importData;
+window.importAllData =
+  importAllData;
