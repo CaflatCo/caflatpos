@@ -1,10 +1,18 @@
 function getProducts() {
 
-  return APP_STATE.products || [];
+  return Array.isArray(
+    APP_STATE.products
+  )
+
+    ? APP_STATE.products
+
+    : [];
 
 }
 
-function setProducts(products) {
+function setProducts(
+  products
+) {
 
   updateState(
     'products',
@@ -15,201 +23,428 @@ function setProducts(products) {
 
   renderPOSProducts();
 
-  if (
-    typeof renderCategoryOptions
-    ===
-    'function'
-  ) {
-
-    renderCategoryOptions();
-
-  }
+  refreshDashboard();
 
 }
 
-function resetProductForm() {
+function getProductFormData() {
 
-  const fields = [
+  return {
 
-    'productId',
-    'productSKU',
-    'productNameInput',
-    'productCategory',
-    'productCost',
-    'productPrice',
-    'productStock',
-    'productReorder',
-    'productDescription',
-    'productType',
-    'batchYield'
+    id:
+      getElementValue(
+        'productId'
+      ) || generateId(),
 
-  ];
+    name:
+      sanitizeText(
+        getElementValue(
+          'productName'
+        )
+      ),
 
-  fields.forEach(id => {
+    category:
+      sanitizeText(
+        getElementValue(
+          'productCategory'
+        )
+      ),
 
-    const el =
-      document.getElementById(id);
+    description:
+      sanitizeText(
+        getElementValue(
+          'productDescription'
+        )
+      ),
 
-    if (!el) return;
+    price:
+      safeNumber(
+        getElementValue(
+          'productPrice'
+        )
+      ),
 
-    if (
-      el.tagName === 'SELECT'
-    ) {
+    stock:
+      safeNumber(
+        getElementValue(
+          'productStock'
+        )
+      ),
 
-      el.selectedIndex = 0;
+    reorderLevel:
+      safeNumber(
+        getElementValue(
+          'productReorderLevel'
+        )
+      ),
 
-    } else {
+    variants:
+      collectVariants(),
 
-      el.value = '';
+    recipe:
+      collectRecipeRows(),
 
-    }
+    createdAt:
+      new Date()
+        .toISOString()
 
-  });
-
-  const recipeBuilder =
-    document.getElementById(
-      'recipeBuilder'
-    );
-
-  if (recipeBuilder) {
-
-    recipeBuilder.innerHTML = '';
-
-  }
-
-  const variantBuilder =
-    document.getElementById(
-      'variantBuilder'
-    );
-
-  if (variantBuilder) {
-
-    variantBuilder.innerHTML = '';
-
-  }
-
-  const batchYieldWrap =
-    document.getElementById(
-      'batchYieldWrap'
-    );
-
-  if (batchYieldWrap) {
-
-    batchYieldWrap.style.display =
-      'none';
-
-  }
-
-  const recipeMode =
-    document.getElementById(
-      'recipeMode'
-    );
-
-  if (recipeMode) {
-
-    recipeMode.value = 'unit';
-
-  }
-
-  const batchYield =
-    document.getElementById(
-      'batchYield'
-    );
-
-  if (batchYield) {
-
-    batchYield.value = 1;
-
-  }
+  };
 
 }
 
-function ensureCategory(category) {
+function collectVariants() {
 
-  const name =
-    String(category || '')
-      .trim();
-
-  if (!name) return;
-
-  const categories =
-
-    Array.isArray(
-      APP_STATE.categories
-    )
-
-      ? [...APP_STATE.categories]
-
-      : [];
-
-  if (!categories.includes(name)) {
-
-    categories.push(name);
-
-    updateState(
-      'categories',
-      () => categories
+  const rows =
+    document.querySelectorAll(
+      '.variant-row'
     );
 
-  }
+  return Array.from(rows)
+    .map(row => {
+
+      const name =
+        sanitizeText(
+          row.querySelector(
+            '.variant-name'
+          )?.value
+        );
+
+      const price =
+        safeNumber(
+          row.querySelector(
+            '.variant-price'
+          )?.value
+        );
+
+      if (!name) {
+        return null;
+      }
+
+      return {
+
+        id:
+          generateId(),
+
+        name,
+
+        price
+
+      };
+
+    })
+    .filter(Boolean);
 
 }
 
-function getVisibleProducts() {
+function collectRecipeRows() {
+
+  const rows =
+    document.querySelectorAll(
+      '.recipe-row'
+    );
+
+  return Array.from(rows)
+    .map(row => {
+
+      const ingredientId =
+        row.querySelector(
+          '.recipe-ingredient'
+        )?.value;
+
+      const quantity =
+        safeNumber(
+          row.querySelector(
+            '.recipe-qty'
+          )?.value
+        );
+
+      if (!ingredientId) {
+        return null;
+      }
+
+      return {
+
+        ingredientId,
+
+        quantity
+
+      };
+
+    })
+    .filter(Boolean);
+
+}
+
+function saveProduct() {
+
+  const data =
+    getProductFormData();
+
+  if (!data.name) {
+
+    showNotification(
+      'Product name is required',
+      'error'
+    );
+
+    return;
+
+  }
+
+  if (!data.category) {
+
+    showNotification(
+      'Category is required',
+      'error'
+    );
+
+    return;
+
+  }
 
   const products =
     getProducts();
 
-  const search =
+  const existingIndex =
+    products.findIndex(
+      product =>
 
-    (
-      document.getElementById(
-        'productSearch'
-      )?.value || ''
-    )
-
-      .trim()
-      .toLowerCase();
-
-  const categoryFilter =
-
-    document.getElementById(
-      'productCategoryFilter'
-    )?.value || '';
-
-  return products.filter(product => {
-
-    const matchesSearch =
-
-      !search ||
-
-      [
-        product.sku,
-        product.name,
-        product.category,
-        product.description
-      ].some(value =>
-
-        String(value || '')
-          .toLowerCase()
-          .includes(search)
-
-      );
-
-    const matchesCategory =
-
-      !categoryFilter ||
-
-      String(product.category || '')
-      ===
-      String(categoryFilter);
-
-    return (
-      matchesSearch &&
-      matchesCategory
+        String(product.id)
+        ===
+        String(data.id)
     );
 
-  });
+  if (
+    existingIndex >= 0
+  ) {
+
+    products[
+      existingIndex
+    ] = data;
+
+  } else {
+
+    products.push(data);
+
+  }
+
+  setProducts(products);
+
+  closeModal(
+    'productModal'
+  );
+
+  clearProductForm();
+
+  showNotification(
+    'Product saved successfully',
+    'success'
+  );
+
+}
+
+function clearProductForm() {
+
+  setElementValue(
+    'productId',
+    ''
+  );
+
+  setElementValue(
+    'productName',
+    ''
+  );
+
+  setElementValue(
+    'productCategory',
+    ''
+  );
+
+  setElementValue(
+    'productDescription',
+    ''
+  );
+
+  setElementValue(
+    'productPrice',
+    ''
+  );
+
+  setElementValue(
+    'productStock',
+    ''
+  );
+
+  setElementValue(
+    'productReorderLevel',
+    ''
+  );
+
+  const variantContainer =
+    document.getElementById(
+      'variantBuilder'
+    );
+
+  if (variantContainer) {
+
+    variantContainer.innerHTML =
+      '';
+
+  }
+
+  const recipeContainer =
+    document.getElementById(
+      'recipeBuilder'
+    );
+
+  if (recipeContainer) {
+
+    recipeContainer.innerHTML =
+      '';
+
+  }
+
+}
+
+function openProductModal(
+  productId = null
+) {
+
+  clearProductForm();
+
+  if (productId) {
+
+    const product =
+      getProducts().find(
+        item =>
+
+          String(item.id)
+          ===
+          String(productId)
+      );
+
+    if (product) {
+
+      hydrateProductForm(
+        product
+      );
+
+    }
+
+  }
+
+  openModal(
+    'productModal'
+  );
+
+}
+
+function hydrateProductForm(
+  product
+) {
+
+  setElementValue(
+    'productId',
+    product.id
+  );
+
+  setElementValue(
+    'productName',
+    product.name
+  );
+
+  setElementValue(
+    'productCategory',
+    product.category
+  );
+
+  setElementValue(
+    'productDescription',
+    product.description
+  );
+
+  setElementValue(
+    'productPrice',
+    product.price
+  );
+
+  setElementValue(
+    'productStock',
+    product.stock
+  );
+
+  setElementValue(
+    'productReorderLevel',
+    product.reorderLevel
+  );
+
+  if (
+    Array.isArray(
+      product.variants
+    )
+  ) {
+
+    product.variants.forEach(
+      variant => {
+
+        addVariantRow(
+          variant
+        );
+
+      }
+    );
+
+  }
+
+  if (
+    Array.isArray(
+      product.recipe
+    )
+  ) {
+
+    product.recipe.forEach(
+      recipeItem => {
+
+        addRecipeRow(
+          recipeItem
+        );
+
+      }
+    );
+
+  }
+
+}
+
+function deleteProduct(
+  productId
+) {
+
+  const confirmed =
+    confirm(
+      'Delete this product?'
+    );
+
+  if (!confirmed)
+    return;
+
+  const filtered =
+    getProducts().filter(
+      product =>
+
+        String(product.id)
+        !==
+        String(productId)
+    );
+
+  setProducts(
+    filtered
+  );
+
+  showNotification(
+    'Product deleted',
+    'success'
+  );
 
 }
 
@@ -220,12 +455,54 @@ function renderProductsTable() {
       '#productsTable tbody'
     );
 
-  if (!tableBody) return;
+  if (!tableBody)
+    return;
 
-  tableBody.innerHTML = '';
+  const search =
+    sanitizeText(
+
+      getElementValue(
+        'productSearch'
+      )
+
+    ).toLowerCase();
+
+  const category =
+    getElementValue(
+      'productCategoryFilter'
+    );
 
   const products =
-    getVisibleProducts();
+    getProducts().filter(
+      product => {
+
+        const matchesSearch =
+
+          !search ||
+
+          product.name
+            .toLowerCase()
+            .includes(search);
+
+        const matchesCategory =
+
+          !category ||
+
+          category === 'All' ||
+
+          product.category ===
+            category;
+
+        return (
+          matchesSearch &&
+          matchesCategory
+        );
+
+      }
+    );
+
+  tableBody.innerHTML =
+    '';
 
   if (!products.length) {
 
@@ -234,8 +511,8 @@ function renderProductsTable() {
       <tr>
 
         <td
-          colspan="8"
-          class="empty-state centered-empty-state">
+          colspan="7"
+          class="empty-state">
 
           No products found
 
@@ -249,291 +526,118 @@ function renderProductsTable() {
 
   }
 
-  products.forEach(product => {
+  products.forEach(
+    product => {
 
-    const cost =
-      Number(product.cost || 0);
+      const lowStock =
 
-    const price =
-      Number(product.price || 0);
+        Number(
+          product.stock || 0
+        )
 
-    const margin =
+        <=
 
-      price > 0
-
-        ? Math.round(
-            (
-              (
-                price - cost
-              )
-              /
-              price
-            ) * 100
-          )
-
-        : 0;
-
-    const stock =
-      Number(product.stock || 0);
-
-    const reorderLevel =
-      Number(
-        product.reorderLevel || 0
-      );
-
-    const row =
-      document.createElement(
-        'tr'
-      );
-
-    if (
-      stock <= reorderLevel
-    ) {
-
-      row.classList.add(
-        'low-stock-row'
-      );
-
-    }
-
-    row.innerHTML = `
-
-      <td>
-        ${product.sku || '-'}
-      </td>
-
-      <td>
-        ${product.name || '-'}
-      </td>
-
-      <td>
-        ${product.category || '-'}
-      </td>
-
-      <td>
-        ${formatCurrency(cost)}
-      </td>
-
-      <td>
-        ${formatCurrency(price)}
-      </td>
-
-      <td>
-        ${margin}%
-      </td>
-
-      <td>
-        ${stock}
-      </td>
-
-      <td>
-
-        <div class="table-actions">
-
-          <button
-            class="btn btn-sm"
-            type="button"
-            onclick="editProduct('${product.id}')">
-
-            Edit
-
-          </button>
-
-          <button
-            class="btn btn-sm"
-            type="button"
-            onclick="deleteProduct('${product.id}')">
-
-            Delete
-
-          </button>
-
-        </div>
-
-      </td>
-
-    `;
-
-    tableBody.appendChild(row);
-
-  });
-
-}
-
-function collectRecipeItems() {
-
-  const rows =
-    document.querySelectorAll(
-      '#recipeBuilder .recipe-row'
-    );
-
-  const recipe = [];
-
-  rows.forEach(row => {
-
-    const ingredientId =
-      row.querySelector(
-        '.recipe-ingredient'
-      )?.value || '';
-
-    const quantity =
-      Number(
-        row.querySelector(
-          '.recipe-qty'
-        )?.value || 0
-      );
-
-    if (
-      ingredientId &&
-      quantity > 0
-    ) {
-
-      recipe.push({
-
-        ingredientId,
-        quantity
-
-      });
-
-    }
-
-  });
-
-  return recipe;
-
-}
-
-function collectVariants() {
-
-  const rows =
-    document.querySelectorAll(
-      '#variantBuilder .variant-card'
-    );
-
-  const variants = [];
-
-  rows.forEach(row => {
-
-    const name =
-      row.querySelector(
-        '.variant-name'
-      )?.value || '';
-
-    const price =
-      Number(
-        row.querySelector(
-          '.variant-price'
-        )?.value || 0
-      );
-
-    if (name.trim()) {
-
-      variants.push({
-
-        id:
-          generateId(),
-
-        name:
-          name.trim(),
-
-        price
-
-      });
-
-    }
-
-  });
-
-  return variants;
-
-}
-
-function openVariantSelector(
-  product
-) {
-
-  const modal =
-    document.getElementById(
-      'variantModal'
-    );
-
-  const options =
-    document.getElementById(
-      'variantOptions'
-    );
-
-  if (!modal || !options)
-    return;
-
-  options.innerHTML = '';
-
-  if (
-    !Array.isArray(
-      product.variants
-    ) ||
-    !product.variants.length
-  ) {
-
-    return;
-
-  }
-
-  product.variants.forEach(
-    variant => {
-
-      const button =
-        document.createElement(
-          'button'
+        Number(
+          product.reorderLevel || 0
         );
 
-      button.type = 'button';
+      const row =
+        document.createElement(
+          'tr'
+        );
 
-      button.className =
-        'variant-option';
+      if (lowStock) {
 
-      button.innerHTML = `
+        row.classList.add(
+          'low-stock-row'
+        );
 
-        <div class="variant-option-name">
+      }
 
-          ${variant.name}
+      row.innerHTML = `
 
-        </div>
+        <td>
 
-        <div class="variant-option-price">
+          ${product.name}
+
+        </td>
+
+        <td>
+
+          ${product.category}
+
+        </td>
+
+        <td>
 
           ${formatCurrency(
-            Number(
-              variant.price || 0
-            )
+            product.price
           )}
 
-        </div>
+        </td>
+
+        <td>
+
+          ${product.stock}
+
+        </td>
+
+        <td>
+
+          ${product.reorderLevel}
+
+        </td>
+
+        <td>
+
+          ${lowStock
+
+            ? `
+              <span class="badge-low-stock">
+                Low Stock
+              </span>
+            `
+
+            : `
+              <span class="badge dark">
+                OK
+              </span>
+            `
+          }
+
+        </td>
+
+        <td>
+
+          <div class="table-actions">
+
+            <button
+              class="btn btn-sm"
+              onclick="openProductModal('${product.id}')">
+
+              Edit
+
+            </button>
+
+            <button
+              class="btn btn-sm btn-secondary"
+              onclick="deleteProduct('${product.id}')">
+
+              Delete
+
+            </button>
+
+          </div>
+
+        </td>
 
       `;
 
-      button.addEventListener(
-        'click',
-        () => {
-
-          addToCart(
-            product.id,
-            variant
-          );
-
-          closeModal(
-            'variantModal'
-          );
-
-        }
+      tableBody.appendChild(
+        row
       );
 
-      options.appendChild(button);
-
     }
-  );
-
-  openModal(
-    'variantModal'
   );
 
 }
@@ -545,10 +649,33 @@ function renderPOSProducts() {
       'productGrid'
     );
 
-  if (!grid) return;
+  if (!grid)
+    return;
+
+  const activeCategory =
+    APP_STATE.ui
+      ?.activeCategory ||
+
+    'All';
 
   const products =
-    getVisibleProducts();
+    getProducts().filter(
+      product => {
+
+        if (
+          activeCategory ===
+          'All'
+        ) {
+          return true;
+        }
+
+        return (
+          product.category ===
+          activeCategory
+        );
+
+      }
+    );
 
   grid.innerHTML = '';
 
@@ -556,9 +683,9 @@ function renderPOSProducts() {
 
     grid.innerHTML = `
 
-      <div class="empty-state centered-empty-state">
+      <div class="empty-state">
 
-        No products available
+        No products found
 
       </div>
 
@@ -568,484 +695,133 @@ function renderPOSProducts() {
 
   }
 
-  products.forEach(product => {
+  products.forEach(
+    product => {
 
-    const stock =
-      Number(product.stock || 0);
+      const lowStock =
 
-    const reorderLevel =
-      Number(
-        product.reorderLevel || 0
-      );
+        Number(
+          product.stock || 0
+        )
 
-    const hasVariants =
+        <=
 
-      Array.isArray(
-        product.variants
-      )
+        Number(
+          product.reorderLevel || 0
+        );
 
-      &&
+      const outOfStock =
+        Number(
+          product.stock || 0
+        ) <= 0;
 
-      product.variants.length > 0;
+      const card =
+        document.createElement(
+          'div'
+        );
 
-    const card =
-      document.createElement(
-        'button'
-      );
+      card.className =
+        `pos-product-card
+        ${lowStock ? 'low-stock' : ''}
+        ${outOfStock ? 'out-of-stock' : ''}`;
 
-    card.type = 'button';
+      card.innerHTML = `
 
-    card.className =
-      'pos-product-card';
+        <div class="pos-card-top">
 
-    if (
-      stock <= reorderLevel
-    ) {
+          <div class="pos-category-badge">
 
-      card.classList.add(
-        'low-stock'
-      );
+            ${product.category}
 
-    }
+          </div>
 
-    if (stock <= 0) {
+          ${lowStock
 
-      card.classList.add(
-        'out-of-stock'
-      );
+            ? `
+              <div class="pos-low-stock-pill">
+                Low
+              </div>
+            `
 
-    }
+            : ''
+          }
 
-    card.addEventListener(
-      'click',
-      () => {
+        </div>
 
-        if (stock <= 0)
-          return;
+        <div class="pos-product-body">
 
-        addToCart(
-          product.id
+          <div class="pos-product-name">
+
+            ${product.name}
+
+          </div>
+
+          <div class="pos-product-description">
+
+            ${product.description || ''}
+
+          </div>
+
+        </div>
+
+        <div class="pos-product-footer">
+
+          <div class="pos-product-price">
+
+            ${formatCurrency(
+              product.price
+            )}
+
+          </div>
+
+          <div class="pos-product-stock">
+
+            ${product.stock} left
+
+          </div>
+
+        </div>
+
+      `;
+
+      if (!outOfStock) {
+
+        card.addEventListener(
+          'click',
+          () => {
+
+            if (
+              Array.isArray(
+                product.variants
+              ) &&
+              product.variants.length
+            ) {
+
+              openVariantSelector(
+                product.id
+              );
+
+            } else {
+
+              addToCart(
+                product.id
+              );
+
+            }
+
+          }
         );
 
       }
-    );
 
-    card.innerHTML = `
-
-      <div class="pos-card-top">
-
-        <div class="pos-category-badge">
-
-          ${product.category || 'General'}
-
-        </div>
-
-      </div>
-
-      <div class="pos-product-body">
-
-        <div class="pos-product-name">
-
-          ${product.name || '-'}
-
-        </div>
-
-      </div>
-
-      <div class="pos-product-footer">
-
-        <div class="pos-product-price">
-
-          ${formatCurrency(
-            Number(
-              product.price || 0
-            )
-          )}
-
-        </div>
-
-        <div class="pos-product-stock">
-
-          ${stock} LEFT
-
-        </div>
-
-      </div>
-
-      ${
-        hasVariants
-
-          ? `
-
-            <div class="product-card-actions">
-
-              <button
-                type="button"
-                class="btn btn-secondary btn-sm product-options-btn">
-
-                Options
-
-              </button>
-
-            </div>
-
-          `
-
-          : ''
-      }
-
-    `;
-
-    const optionsBtn =
-      card.querySelector(
-        '.product-options-btn'
-      );
-
-    if (optionsBtn) {
-
-      optionsBtn.addEventListener(
-        'click',
-        e => {
-
-          e.stopPropagation();
-
-          openVariantSelector(
-            product
-          );
-
-        }
+      grid.appendChild(
+        card
       );
 
     }
-
-    grid.appendChild(card);
-
-  });
-
-}
-
-function saveProduct() {
-
-  const name =
-    document.getElementById(
-      'productNameInput'
-    )?.value?.trim() || '';
-
-  if (!name) {
-
-    showNotification(
-      'Product name is required',
-      'error'
-    );
-
-    return;
-
-  }
-
-  const category =
-    document.getElementById(
-      'productCategory'
-    )?.value?.trim() || '';
-
-  const productId =
-    document.getElementById(
-      'productId'
-    )?.value || '';
-
-  const products =
-    getProducts();
-
-  const product = {
-
-    id:
-      productId ||
-      generateId(),
-
-    sku:
-      document.getElementById(
-        'productSKU'
-      )?.value?.trim() || '',
-
-    name,
-
-    category,
-
-    cost:
-      Number(
-        document.getElementById(
-          'productCost'
-        )?.value || 0
-      ),
-
-    price:
-      Number(
-        document.getElementById(
-          'productPrice'
-        )?.value || 0
-      ),
-
-    stock:
-      Number(
-        document.getElementById(
-          'productStock'
-        )?.value || 0
-      ),
-
-    reorderLevel:
-      Number(
-        document.getElementById(
-          'productReorder'
-        )?.value || 0
-      ),
-
-    description:
-      document.getElementById(
-        'productDescription'
-      )?.value || '',
-
-    productType:
-      document.getElementById(
-        'productType'
-      )?.value || 'standard',
-
-    recipeMode:
-      document.getElementById(
-        'recipeMode'
-      )?.value || 'unit',
-
-    batchYield:
-      Number(
-        document.getElementById(
-          'batchYield'
-        )?.value || 1
-      ),
-
-    recipe:
-      collectRecipeItems(),
-
-    variants:
-      collectVariants(),
-
-    updatedAt:
-      new Date().toISOString()
-
-  };
-
-  ensureCategory(category);
-
-  const existingIndex =
-    products.findIndex(
-
-      item =>
-
-        String(item.id)
-        ===
-        String(product.id)
-
-    );
-
-  if (existingIndex !== -1) {
-
-    products[existingIndex] =
-      product;
-
-  } else {
-
-    products.push(product);
-
-  }
-
-  setProducts(products);
-
-  closeModal(
-    'productModal'
-  );
-
-  resetProductForm();
-
-  showNotification(
-    'Product saved',
-    'success'
   );
 
 }
-
-function editProduct(id) {
-
-  const product =
-    getProducts().find(
-
-      item =>
-
-        String(item.id)
-        ===
-        String(id)
-
-    );
-
-  if (!product) return;
-
-  document.getElementById(
-    'productId'
-  ).value =
-    product.id || '';
-
-  document.getElementById(
-    'productSKU'
-  ).value =
-    product.sku || '';
-
-  document.getElementById(
-    'productNameInput'
-  ).value =
-    product.name || '';
-
-  document.getElementById(
-    'productCategory'
-  ).value =
-    product.category || '';
-
-  document.getElementById(
-    'productCost'
-  ).value =
-    product.cost || 0;
-
-  document.getElementById(
-    'productPrice'
-  ).value =
-    product.price || 0;
-
-  document.getElementById(
-    'productStock'
-  ).value =
-    product.stock || 0;
-
-  document.getElementById(
-    'productReorder'
-  ).value =
-    product.reorderLevel || 0;
-
-  document.getElementById(
-    'productDescription'
-  ).value =
-    product.description || '';
-
-  document.getElementById(
-    'productType'
-  ).value =
-    product.productType || 'standard';
-
-  document.getElementById(
-    'recipeMode'
-  ).value =
-    product.recipeMode || 'unit';
-
-  document.getElementById(
-    'batchYield'
-  ).value =
-    product.batchYield || 1;
-
-  const variantBuilder =
-    document.getElementById(
-      'variantBuilder'
-    );
-
-  if (variantBuilder) {
-
-    variantBuilder.innerHTML = '';
-
-    (
-      product.variants || []
-    ).forEach(variant => {
-
-      addVariantRow({
-
-        label:
-          variant.name,
-
-        price:
-          variant.price
-
-      });
-
-    });
-
-  }
-
-  const recipeBuilder =
-    document.getElementById(
-      'recipeBuilder'
-    );
-
-  if (recipeBuilder) {
-
-    recipeBuilder.innerHTML = '';
-
-    (
-      product.recipe || []
-    ).forEach(item => {
-
-      addRecipeRow(item);
-
-    });
-
-  }
-
-  if (
-    typeof toggleRecipeMode
-    ===
-    'function'
-  ) {
-
-    toggleRecipeMode();
-
-  }
-
-  openModal(
-    'productModal'
-  );
-
-}
-
-function deleteProduct(id) {
-
-  const confirmed =
-    confirm(
-      'Delete product?'
-    );
-
-  if (!confirmed) return;
-
-  const updated =
-    getProducts().filter(
-
-      item =>
-
-        String(item.id)
-        !==
-        String(id)
-
-    );
-
-  setProducts(updated);
-
-  showNotification(
-    'Product deleted',
-    'success'
-  );
-
-}
-
-document.addEventListener(
-  'DOMContentLoaded',
-  () => {
-
-    renderProductsTable();
-
-    renderPOSProducts();
-
-  }
-);
 
 window.getProducts =
   getProducts;
@@ -1053,23 +829,17 @@ window.getProducts =
 window.setProducts =
   setProducts;
 
+window.saveProduct =
+  saveProduct;
+
+window.openProductModal =
+  openProductModal;
+
+window.deleteProduct =
+  deleteProduct;
+
 window.renderProductsTable =
   renderProductsTable;
 
 window.renderPOSProducts =
   renderPOSProducts;
-
-window.saveProduct =
-  saveProduct;
-
-window.editProduct =
-  editProduct;
-
-window.deleteProduct =
-  deleteProduct;
-
-window.openVariantSelector =
-  openVariantSelector;
-
-window.resetProductForm =
-  resetProductForm;
