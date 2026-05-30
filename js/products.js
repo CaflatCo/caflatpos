@@ -18,6 +18,7 @@ function getProductFormData() {
     price: safeNumber(getElementValue('productPrice')),
     stock: safeNumber(getElementValue('productStock')),
     reorderLevel: safeNumber(getElementValue('productReorderLevel')),
+    variantType: getElementValue('variantType') || 'custom',
     variants: collectVariants(),
     recipe: collectRecipeRows(),
     createdAt: new Date().toISOString()
@@ -111,6 +112,7 @@ function hydrateProductForm(product) {
   setElementValue('productPrice', product.price);
   setElementValue('productStock', product.stock);
   setElementValue('productReorderLevel', product.reorderLevel);
+  setElementValue('variantType', product.variantType || 'custom');
 
   if (Array.isArray(product.variants)) {
     product.variants.forEach(variant => addVariantRow(variant));
