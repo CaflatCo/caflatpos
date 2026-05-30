@@ -1072,3 +1072,8 @@ tr:hover td {
     width: min(92vw, 400px);
   }
 }
+
+
+/* Product Card UI Refresh */
+.pos-product-price,.pos-product-stock{text-align:center;width:100%;}
+.pos-options-btn{margin-left:auto;font-size:.75rem}
