@@ -1077,3 +1077,14 @@ tr:hover td {
 /* Product Card UI Refresh */
 .pos-product-price,.pos-product-stock{text-align:center;width:100%;}
 .pos-options-btn{margin-left:auto;font-size:.75rem}
+
+.pos-product-footer{
+flex-direction:column!important;
+align-items:center!important;
+gap:6px!important;
+}
+.pos-card-top{
+display:flex;
+justify-content:space-between;
+align-items:center;
+}
