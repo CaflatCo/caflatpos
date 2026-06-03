@@ -1196,3 +1196,7 @@ text-transform:uppercase;
  justify-content:center;
  align-items:center;
 }
+
+
+/* Product name vertical centering fix */
+.pos-product-name{margin-top:30px !important;}
