@@ -1228,3 +1228,41 @@ text-transform:uppercase;
 .pos-product-footer{
   display:none !important;
 }
+
+
+/* CAFLAT FINAL RECOVERY FIX */
+.pos-product-card{
+  aspect-ratio:auto !important;
+  height:290px !important;
+  justify-content:flex-start !important;
+}
+
+.pos-product-body{
+  flex:1 !important;
+  display:flex !important;
+  flex-direction:column !important;
+  justify-content:center !important;
+  align-items:center !important;
+  gap:12px !important;
+  transform:none !important;
+  padding:0 !important;
+}
+
+.pos-product-name{
+  margin-top:20px !important;
+  margin-bottom:12px !important;
+}
+
+.pos-product-footer{
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:6px !important;
+  margin-top:0 !important;
+}
+
+.pos-product-price,
+.pos-product-stock{
+  display:block !important;
+}
