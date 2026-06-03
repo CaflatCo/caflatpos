@@ -1328,3 +1328,30 @@ text-transform:uppercase;
 .held-order-card:hover{
   transform:translateY(-1px);
 }
+
+
+/* HELD ORDERS MODAL POLISH */
+#heldOrdersModal.modal{
+  align-items:flex-start !important;
+  padding-top:80px !important;
+}
+#heldOrdersModal .modal-content{
+  width:520px !important;
+  max-width:90vw !important;
+  height:auto !important;
+  min-height:0 !important;
+  padding:20px !important;
+}
+#heldOrdersList{
+  margin-bottom:16px !important;
+}
+#heldOrdersList .held-order-card{
+  transition:all .15s ease;
+}
+#heldOrdersList .held-order-card:hover{
+  transform:translateY(-1px);
+}
+#heldOrdersModal .close-btn,
+#heldOrdersModal button[data-close]{
+  width:100% !important;
+}
