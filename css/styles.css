@@ -1200,3 +1200,9 @@ text-transform:uppercase;
 
 /* Product name vertical centering fix */
 .pos-product-name{margin-top:30px !important;}
+
+
+/* Restore square product tiles */
+.pos-product-card{
+  aspect-ratio: 1 / 1 !important;
+}
