@@ -1139,3 +1139,37 @@ text-transform:uppercase;
   margin-left:0 !important;
   color:#666 !important;
 }
+
+
+/* PRODUCT TILE FINAL CLEANUP */
+.pos-product-body{
+ flex:1 !important;
+ display:flex !important;
+ flex-direction:column !important;
+ justify-content:center !important;
+ align-items:center !important;
+}
+.pos-product-name{
+ font-size:26px !important;
+ font-weight:800 !important;
+ line-height:1.15 !important;
+ text-align:center !important;
+ margin-bottom:24px !important;
+ max-width:90% !important;
+}
+.pos-product-price{
+ font-size:22px !important;
+ font-weight:800 !important;
+}
+.pos-product-footer{
+ display:flex !important;
+ flex-direction:column !important;
+ align-items:center !important;
+ justify-content:center !important;
+ gap:6px !important;
+}
+.pos-product-stock{text-align:center !important;}
+.pos-options-btn{
+ margin-left:0 !important;
+ color:#666 !important;
+}
