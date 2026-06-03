@@ -1354,4 +1354,5 @@ text-transform:uppercase;
 #heldOrdersModal .close-btn,
 #heldOrdersModal button[data-close]{
   width:100% !important;
+  min-height: 48px;
 }
