@@ -1078,13 +1078,12 @@ tr:hover td {
 .pos-product-price,.pos-product-stock{text-align:center;width:100%;}
 .pos-options-btn{margin-left:auto;font-size:.75rem}
 
-.pos-product-footer{
-flex-direction:column!important;
-align-items:center!important;
-gap:6px!important;
-}
-.pos-card-top{
-display:flex;
-justify-content:space-between;
-align-items:center;
+
+/* Product Tile Cleanup */
+.pos-product-description{display:none!important;}
+.pos-product-name{text-align:center;}
+.pos-options-btn,.pos-category-badge{
+border-radius:999px;
+padding:8px 12px;
+text-transform:uppercase;
 }
