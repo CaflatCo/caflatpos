@@ -1108,3 +1108,33 @@ text-transform:uppercase;
 .pos-options-btn{
   color:#666 !important;
 }
+
+
+.pos-product-name{
+  font-size:26px !important;
+  font-weight:800 !important;
+  text-align:center;
+  line-height:1.15;
+}
+
+.pos-product-price{
+  font-size:22px !important;
+  font-weight:800 !important;
+}
+
+.pos-product-footer{
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:6px !important;
+}
+
+.pos-product-stock{
+  text-align:center !important;
+}
+
+.pos-options-btn{
+  margin-left:0 !important;
+  color:#666 !important;
+}
