@@ -1313,7 +1313,7 @@ text-transform:uppercase;
 #heldOrdersModal .modal-content{
   min-height:auto !important;
   height:auto !important;
-  padding-bottom:150px !important;
+  padding-bottom:16px !important;
 }
 
 #heldOrdersList{
@@ -1354,5 +1354,27 @@ text-transform:uppercase;
 #heldOrdersModal .close-btn,
 #heldOrdersModal button[data-close]{
   width:100% !important;
-  min-height: 48px;
+}
+
+
+/* Held Orders Close Button Fix */
+#closeHeldOrdersBtn,
+.close-held-orders,
+[data-action="close-held-orders"]{
+    display:block !important;
+    width:100% !important;
+    min-height:48px !important;
+    padding:12px 24px !important;
+    margin-top:16px !important;
+    border:1px solid #000 !important;
+    border-radius:0 !important;
+    background:#fff !important;
+    text-align:center !important;
+    font-size:14px !important;
+    letter-spacing:.15em !important;
+    text-transform:uppercase !important;
+}
+
+#heldOrdersModal .modal-actions{
+    margin-top:16px !important;
 }
