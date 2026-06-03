@@ -1348,7 +1348,8 @@ text-transform:uppercase;
 #heldOrdersList .held-order-card{
   transition:all .15s ease;
 }
-#heldOrdersList .held-order-card:hover{
+#heldOrdersList .held-order-card:hover
+{
   transform:translateY(-1px);
 }
 #heldOrdersModal .close-btn,
@@ -1369,6 +1370,7 @@ text-transform:uppercase;
     border:1px solid #000 !important;
     border-radius:0 !important;
     background:#fff !important;
+    color: #000 !important;
     text-align:center !important;
     font-size:14px !important;
     letter-spacing:.15em !important;
