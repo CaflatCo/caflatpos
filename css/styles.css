@@ -1387,3 +1387,29 @@ text-transform:uppercase;
 #heldOrdersModal .modal-actions{
     margin-top:16px !important;
 }
+
+
+/* Settings UI Cleanup */
+#categoryList{
+ display:flex;
+ flex-wrap:wrap;
+ gap:10px;
+ margin-bottom:12px;
+}
+
+#categoryList .category-chip{
+ display:inline-flex;
+ align-items:center;
+ gap:8px;
+ padding:8px 14px;
+ border:1px solid #000;
+ background:#fff;
+}
+
+#categoryList .category-chip button{
+ border:none;
+ background:none;
+ cursor:pointer;
+ padding:0;
+ font-size:16px;
+}
