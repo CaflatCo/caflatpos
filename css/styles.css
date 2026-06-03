@@ -1110,11 +1110,12 @@ text-transform:uppercase;
 }
 
 
+/* Caflat.Co Product Tile Final Refinement */
 .pos-product-name{
   font-size:26px !important;
   font-weight:800 !important;
-  text-align:center;
-  line-height:1.15;
+  text-align:center !important;
+  line-height:1.15 !important;
 }
 
 .pos-product-price{
