@@ -1087,3 +1087,24 @@ border-radius:999px;
 padding:8px 12px;
 text-transform:uppercase;
 }
+
+
+/* Caflat Product Tile Refinement */
+.pos-product-name{
+  font-size:32px !important;
+  font-weight:800 !important;
+  text-align:center !important;
+}
+.pos-product-price{
+  font-size:24px !important;
+  font-weight:700 !important;
+  text-align:center !important;
+}
+.pos-product-stock{
+  display:block !important;
+  text-align:center !important;
+  margin-top:6px !important;
+}
+.pos-options-btn{
+  color:#666 !important;
+}
