@@ -1,7 +1,7 @@
 const AUTH_USERS = {
 
   admin: {
-    password: 'Ry9@qm408me',
+    password: 'Y4qara630b5',
     role: 'ADMIN'
   },
 
