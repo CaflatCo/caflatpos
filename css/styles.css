@@ -1282,3 +1282,32 @@ text-transform:uppercase;
  width:100%;
  margin-top:8px;
 }
+
+
+/* Held Orders Modal Fix */
+.hidden{
+  display:none !important;
+}
+
+#heldOrdersModal.modal{
+  position:fixed !important;
+  inset:0 !important;
+  background:rgba(0,0,0,.45) !important;
+  z-index:9999 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+}
+
+#heldOrdersModal.hidden{
+  display:none !important;
+}
+
+#heldOrdersModal .modal-content{
+  background:#fff !important;
+  width:min(700px,90vw) !important;
+  max-height:80vh !important;
+  overflow:auto !important;
+  padding:24px !important;
+  border:1px solid #000 !important;
+}
