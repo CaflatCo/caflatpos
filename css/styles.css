@@ -1173,3 +1173,18 @@ text-transform:uppercase;
  margin-left:0 !important;
  color:#666 !important;
 }
+
+
+/* Product Tile Vertical Center Fix */
+.pos-product-card{
+  justify-content:flex-start !important;
+}
+.pos-product-body{
+  flex:1 !important;
+  display:flex !important;
+  flex-direction:column !important;
+  justify-content:center !important;
+  align-items:center !important;
+  padding-top:20px !important;
+  padding-bottom:20px !important;
+}
