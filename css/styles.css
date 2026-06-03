@@ -1266,3 +1266,19 @@ text-transform:uppercase;
 .pos-product-stock{
   display:block !important;
 }
+
+
+/* Held orders layout fix */
+.cart-actions{
+ display:flex !important;
+ flex-direction:column !important;
+}
+.cart-actions-row{
+ display:grid;
+ grid-template-columns:1fr 1fr 1fr;
+ gap:8px;
+}
+.checkout-btn{
+ width:100%;
+ margin-top:8px;
+}
