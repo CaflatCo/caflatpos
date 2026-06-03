@@ -1417,3 +1417,10 @@ text-transform:uppercase;
 
 /* Sales table divider fix */
 #view-sales .table-wrapper{border-bottom:1px solid #000;padding-bottom:1px;}
+
+
+/* SALES PAGE DIVIDER FIX */
+#view-sales .table-wrapper{
+    border-bottom:1px solid #000 !important;
+    padding-bottom:1px !important;
+}
