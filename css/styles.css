@@ -136,7 +136,7 @@ main {
   border: 1px solid #e5e5e5;
   border-radius: 22px;
   padding: 22px;
-  min-height: 220px;
+  height: 290px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -1205,4 +1205,25 @@ text-transform:uppercase;
 /* Restore square product tiles */
 .pos-product-card{
   aspect-ratio: 1 / 1 !important;
+}
+
+
+/* Caflat.CoPOS final tile layout */
+.pos-product-body{
+  flex:1 !important;
+  display:flex !important;
+  flex-direction:column !important;
+  justify-content:center !important;
+  align-items:center !important;
+  gap:12px !important;
+}
+.pos-product-name{
+  margin-bottom:0 !important;
+  margin-top:0 !important;
+}
+.pos-product-price{
+  font-size:22px !important;
+}
+.pos-product-footer{
+  display:none !important;
 }
