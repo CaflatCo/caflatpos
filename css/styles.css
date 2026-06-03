@@ -1291,12 +1291,19 @@ text-transform:uppercase;
 
 #heldOrdersModal:not(.hidden){
     position:fixed !important;
-    inset:0 !important;
+    top:0 !important;
+    left:0 !important;
+    right:0 !important;
+    bottom:0 !important;
+    width:100vw !important;
+    height:100dvh !important;
+    min-height:100dvh !important;
     display:flex !important;
-    align-items:center !important;
     justify-content:center !important;
+    align-items:flex-start !important;
+    padding-top:80px !important;
     background:rgba(0,0,0,.45) !important;
-    z-index:9999 !important;
+    z-index:99999 !important;
 }
 
 #heldOrdersModal .modal-content{
